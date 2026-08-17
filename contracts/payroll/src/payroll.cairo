@@ -9,6 +9,7 @@ pub struct RunInfo {
     pub paid_count: u32,
     pub total_committed: u128,
     pub total_paid: u128,
+    pub expected_total: u128,
     pub closed: bool,
 }
 
@@ -43,6 +44,12 @@ pub trait IPayroll<T> {
         secret: felt252,
         note_id: felt252,
     ) -> Span<OpenNoteDeposit>;
+}
+
+pub const PAYROLL_COMMITMENT_TAG: felt252 = 'PAYROLL_COMMITMENT_TAG:V1';
+
+pub fn compute_commitment_hash(secret: felt252) -> felt252 {
+    core::poseidon::poseidon_hash_span([PAYROLL_COMMITMENT_TAG, secret].span())
 }
 
 pub mod errors {
@@ -128,6 +135,7 @@ pub mod Payroll {
                                 paid_count: 0,
                                 total_committed: 0,
                                 total_paid: 0,
+                                expected_total: amount, // `amount` doubles as expected_total for OpenRun
                                 closed: false,
                             },
                         );
@@ -144,7 +152,7 @@ pub mod Payroll {
                     assert(existing.token.is_zero(), errors::COMMITMENT_EXISTS);
 
                     run.total_committed += amount;
-                    assert(run.total_committed <= run.total_committed, errors::OVER_COMMITTED);
+                    assert(run.total_committed <= run.expected_total, errors::OVER_COMMITTED);
                     self.runs.write(run_id, run);
 
                     self
@@ -156,8 +164,22 @@ pub mod Payroll {
                     [].span()
                 },
                 PayrollOperation::Claim => {
-                    // Implemented in Task 3.
-                    [].span()
+                    let commitment_hash = super::compute_commitment_hash(secret);
+                    let entry = self.commitments.read(commitment_hash);
+                    assert(entry.token.is_non_zero(), errors::COMMITMENT_NOT_FOUND);
+                    assert(!entry.claimed, errors::ALREADY_CLAIMED);
+
+                    self.commitments.write(commitment_hash, CommitmentEntry { claimed: true, ..entry });
+
+                    let mut run = self.runs.read(entry.run_id);
+                    run.paid_count += 1;
+                    run.total_paid += entry.amount;
+                    self.runs.write(entry.run_id, run);
+
+                    IERC20Dispatcher { contract_address: entry.token }
+                        .approve(spender: privacy_addr, amount: entry.amount.into());
+
+                    [OpenNoteDeposit { note_id, token: entry.token, amount: entry.amount }].span()
                 },
             }
         }

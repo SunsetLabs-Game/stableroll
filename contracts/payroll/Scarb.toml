@@ -12,3 +12,6 @@ privacy = { git = "https://github.com/starkware-libs/starknet-privacy.git", tag 
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.63.0" }
 
 [[target.starknet-contract]]
+
+[scripts]
+test = "snforge test"
