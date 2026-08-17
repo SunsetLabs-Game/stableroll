@@ -1,0 +1,24 @@
+# superpowers workflow artifacts — specs, plans, and SDD workspaces never get committed
+**/superpowers/**
+.superpowers/
+
+# dependencies
+node_modules/
+**/node_modules/
+
+# Cairo / Scarb / Starknet Foundry build artifacts
+target/
+.snfoundry_cache/
+
+# JS/TS build output
+dist/
+build/
+.next/
+
+# environment / secrets
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
