@@ -1,4 +1,4 @@
-import { Account, Contract, RpcProvider, constants, type AccountInterface } from "starknet";
+import { Account, Contract, RpcProvider, constants, hash, type AccountInterface } from "starknet";
 import {
   createPrivateTransfers,
   ProvingServiceProofProvider,
@@ -15,6 +15,14 @@ export const SEPOLIA_CONFIG = {
   poolAddress: process.env.SEPOLIA_POOL_ADDRESS ?? "",
   // Payroll contract address, filled in after Task 4 Step 3's deploy.
   payrollAddress: process.env.SEPOLIA_PAYROLL_ADDRESS ?? "",
+  // ERC-20 token address the run is denominated in (Sepolia STRK). Passed
+  // both to the SDK's `.with(token, ...)` deposit builder and as the
+  // `token: ContractAddress` positional arg to `Payroll.privacy_invoke`.
+  // Must be a real felt address — a bare token symbol like "STRK" is not
+  // a valid `StarknetAddress` (the SDK's `StarknetAddress` type is
+  // `BigNumberish`; a non-numeric string type-checks but throws at
+  // runtime when the SDK calls `toBigInt()` on it).
+  strkAddress: process.env.SEPOLIA_STRK_ADDRESS ?? "",
   // Hosted Sepolia proving-service URL. No publicly documented hosted
   // Sepolia prover URL was found (see task-4-report.md) — this must be
   // supplied by whoever has access to StarkWare's hosted Sepolia
@@ -22,6 +30,25 @@ export const SEPOLIA_CONFIG = {
   // service instance's URL.
   provingServiceUrl: process.env.SEPOLIA_PROVING_SERVICE_URL ?? "",
 };
+
+// Mirrors `contracts/payroll/src/payroll.cairo`'s
+// `PAYROLL_COMMITMENT_TAG: felt252 = 'PAYROLL_COMMITMENT_TAG:V1'` and
+// `compute_commitment_hash(secret) = poseidon_hash_span([TAG, secret])`,
+// using the exact off-chain formula the plan itself specifies (see
+// docs/superpowers/plans/2026-08-15-plan1-eligibility-and-payroll-core.md,
+// Task 5's `claim-unregistered.test.ts` snippet) so Task 4 and Task 5 never
+// drift independently on how a JS-side `secret` string maps to the Cairo
+// `commitment_hash` felt.
+export const PAYROLL_COMMITMENT_TAG = "PAYROLL_COMMITMENT_TAG:V1";
+
+export function computeCommitmentHash(secret: string): bigint {
+  return BigInt(
+    hash.computePoseidonHashOnElements([
+      hash.starknetKeccak(PAYROLL_COMMITMENT_TAG),
+      hash.starknetKeccak(secret),
+    ]),
+  );
+}
 
 export const SEPOLIA_RPC_PROVIDER = new RpcProvider({ nodeUrl: SEPOLIA_CONFIG.rpcUrl });
 
@@ -62,7 +89,10 @@ export async function getTransfers(account: AccountInterface | Account) {
   return createPrivateTransfers({
     account,
     viewingKeyProvider: {
-      getViewingKey: () => BigInt(requireEnv("TEST_VIEWING_KEY")),
+      // `ViewingKeyProvider.getViewingKey()` is declared `Promise<ViewingKey>`
+      // in sdk/src/interfaces.ts — must be async, a bare `() => BigInt(...)`
+      // returning a plain `bigint` does not satisfy the interface.
+      getViewingKey: async () => BigInt(requireEnv("TEST_VIEWING_KEY")),
     },
     provingProvider: new ProvingServiceProofProvider(
       requireEnv("SEPOLIA_PROVING_SERVICE_URL"),
