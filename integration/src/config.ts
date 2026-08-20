@@ -3,8 +3,6 @@ import {
   Contract,
   RpcProvider,
   constants,
-  hash,
-  shortString,
   type AccountInterface,
 } from "starknet";
 import {
@@ -39,37 +37,10 @@ export const SEPOLIA_CONFIG = {
   provingServiceUrl: process.env.SEPOLIA_PROVING_SERVICE_URL ?? "",
 };
 
-// Mirrors `contracts/payroll/src/payroll.cairo`'s
-// `PAYROLL_COMMITMENT_TAG: felt252 = 'PAYROLL_COMMITMENT_TAG:V1'` and
-// `compute_commitment_hash(secret) = poseidon_hash_span([TAG, secret])`.
-//
-// Cairo never hashes the tag or the secret before the Poseidon call — a
-// Cairo short-string literal like `'PAYROLL_COMMITMENT_TAG:V1'` IS already
-// its own felt252 encoding (ASCII bytes packed into one felt), and `secret`
-// is passed straight through as a felt252. An earlier version of this file
-// (and the plan document's original Task 5 snippet) used
-// `hash.starknetKeccak(...)` on both operands before Poseidon-hashing them
-// — `starknetKeccak` is the *selector*-hashing function Starknet uses for
-// entrypoint names, an entirely different hash from "the felt252 encoding
-// of a short string." That produced a commitment hash that could never
-// match Cairo's, which would make any funded commitment permanently
-// unclaimable (`Claim` would always revert with `COMMITMENT_NOT_FOUND`).
-// Fixed: use `shortString.encodeShortString`, which reproduces the exact
-// felt252 encoding Cairo's `'...'` short-string literal syntax produces.
-export const PAYROLL_COMMITMENT_TAG = "PAYROLL_COMMITMENT_TAG:V1";
-const PAYROLL_COMMITMENT_TAG_FELT = shortString.encodeShortString(PAYROLL_COMMITMENT_TAG);
-
-/**
- * @param secret Either an already-felt252 value (bigint — pass through
- *   unhashed, matching Cairo's `secret: felt252` parameter directly), or a
- *   short human-readable string identifier (like the Cairo test's literal
- *   `'COMMIT-A'`), which is short-string-encoded to a felt252 first so it
- *   matches what the equivalent Cairo string literal would encode to.
- */
-export function computeCommitmentHash(secret: bigint | string): bigint {
-  const secretFelt = typeof secret === "string" ? shortString.encodeShortString(secret) : secret;
-  return BigInt(hash.computePoseidonHashOnElements([PAYROLL_COMMITMENT_TAG_FELT, secretFelt]));
-}
+// Commitment-hash derivation lives in its own SDK-free module so its
+// Cairo-parity test can run without a GitHub Packages token. Re-exported here
+// so existing importers keep working.
+export { PAYROLL_COMMITMENT_TAG, computeCommitmentHash } from "./commitment.js";
 
 export const SEPOLIA_RPC_PROVIDER = new RpcProvider({ nodeUrl: SEPOLIA_CONFIG.rpcUrl });
 

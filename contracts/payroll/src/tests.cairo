@@ -289,3 +289,16 @@ fn test_direct_caller_is_rejected() {
     // privacy pool may drive privacy_invoke.
     dispatcher.privacy_invoke(PayrollOperation::OpenRun, 'RUN-5', 0, token, 100_u128, 1, 0, 0);
 }
+
+/// Pins the exact felt252 `compute_commitment_hash` produces for a fixed
+/// secret. `integration/src/config.ts`'s `computeCommitmentHash` asserts the
+/// SAME literal in `integration/src/commitment-parity.test.ts`. If either side's
+/// domain tag, operand encoding, or hash function drifts, one of the two tests
+/// fails loudly — instead of the drift surfacing as commitments that are funded
+/// on-chain but permanently unclaimable (Claim reverting COMMITMENT_NOT_FOUND).
+#[test]
+fn test_commitment_hash_matches_typescript() {
+    let expected: felt252 =
+        2916571549562949959572444329737062239145273904095529778681389446543678977274;
+    assert(compute_commitment_hash('SECRET-A') == expected, 'TS/Cairo hash drift');
+}
