@@ -1,15 +1,31 @@
 use privacy::objects::OpenNoteDeposit;
 use starknet::ContractAddress;
 
+/// Aggregate, publicly-readable accounting for one payroll run.
+///
+/// Deliberately contains NO payer address. `privacy_invoke` is only ever called
+/// by the privacy pool (see `CALLER_NOT_PRIVACY`), so `get_caller_address()` is
+/// always the pool — a stored "payer" could only ever be the pool's address.
+/// Storing the *real* payer would also defeat the purpose of routing through the
+/// pool at all: it would publish the very link the pool exists to hide.
+/// Run-level authorization is therefore an open design question — see the
+/// `run_id` squatting / third-party funding issue in the tracker.
 #[derive(Serde, Copy, Drop, PartialEq, Debug, starknet::Store)]
 pub struct RunInfo {
-    pub payer: ContractAddress,
     pub token: ContractAddress,
+    /// How many recipients this run promises to pay. Fixed at `OpenRun`.
     pub expected_count: u32,
+    /// How many commitments have actually been funded so far.
+    pub funded_count: u32,
+    /// How many funded commitments have been claimed so far.
     pub paid_count: u32,
+    /// The full budget this run promises to disburse. Fixed at `OpenRun`.
+    pub expected_total: u128,
     pub total_committed: u128,
     pub total_paid: u128,
-    pub expected_total: u128,
+    /// Set once the run is fully funded: `funded_count == expected_count` AND
+    /// `total_committed == expected_total`. Until then the run cannot be
+    /// complete, which is what makes underfunding detectable.
     pub closed: bool,
 }
 
@@ -32,6 +48,11 @@ pub enum PayrollOperation {
 pub trait IPayroll<T> {
     fn get_run(self: @T, run_id: felt252) -> RunInfo;
     fn get_commitment(self: @T, commitment_hash: felt252) -> CommitmentEntry;
+    /// The completeness proof. True only when the run was funded for exactly the
+    /// budget and headcount it promised, and every one of those commitments has
+    /// been claimed. A payer cannot reach `true` by omitting a recipient
+    /// (`funded_count` never reaches `expected_count`, so `closed` stays false)
+    /// or by underpaying (the final `FundCommitment` reverts `UNDER_COMMITTED`).
     fn is_complete(self: @T, run_id: felt252) -> bool;
     fn privacy_invoke(
         ref self: T,
@@ -48,6 +69,10 @@ pub trait IPayroll<T> {
 
 pub const PAYROLL_COMMITMENT_TAG: felt252 = 'PAYROLL_COMMITMENT_TAG:V1';
 
+/// Mirrored byte-for-byte by `computeCommitmentHash` in
+/// `integration/src/config.ts`. Both operands are raw felt252 values — neither
+/// is pre-hashed. If you change this, change that, or every funded commitment
+/// becomes permanently unclaimable.
 pub fn compute_commitment_hash(secret: felt252) -> felt252 {
     core::poseidon::poseidon_hash_span([PAYROLL_COMMITMENT_TAG, secret].span())
 }
@@ -67,6 +92,7 @@ pub mod errors {
     pub const COMMITMENT_NOT_FOUND: felt252 = 'COMMITMENT_NOT_FOUND';
     pub const ALREADY_CLAIMED: felt252 = 'ALREADY_CLAIMED';
     pub const OVER_COMMITTED: felt252 = 'OVER_COMMITTED';
+    pub const UNDER_COMMITTED: felt252 = 'UNDER_COMMITTED';
 }
 
 #[starknet::contract]
@@ -105,7 +131,10 @@ pub mod Payroll {
 
         fn is_complete(self: @ContractState, run_id: felt252) -> bool {
             let run = self.runs.read(run_id);
-            run.expected_count.is_non_zero()
+            // `closed` already implies funded_count == expected_count and
+            // total_committed == expected_total, so this is the full property:
+            // fully funded, for the promised budget, and entirely claimed.
+            run.closed
                 && run.paid_count == run.expected_count
                 && run.total_paid == run.total_committed
         }
@@ -143,13 +172,13 @@ pub mod Payroll {
                         .write(
                             run_id,
                             RunInfo {
-                                payer: get_caller_address(),
                                 token,
                                 expected_count,
+                                funded_count: 0,
                                 paid_count: 0,
+                                expected_total: amount,
                                 total_committed: 0,
                                 total_paid: 0,
-                                expected_total: amount, // `amount` doubles as expected_total for OpenRun
                                 closed: false,
                             },
                         );
@@ -168,8 +197,21 @@ pub mod Payroll {
                     let existing = self.commitments.read(commitment_hash);
                     assert(existing.token.is_zero(), errors::COMMITMENT_EXISTS);
 
+                    // Invariant: funded_count can never exceed expected_count,
+                    // because the run is closed below the moment they are equal
+                    // and a closed run rejects further commitments above.
+                    run.funded_count += 1;
                     run.total_committed += amount;
                     assert(run.total_committed <= run.expected_total, errors::OVER_COMMITTED);
+
+                    // The last commitment must land the run exactly on its
+                    // promised budget. This is what makes underpayment
+                    // impossible to hide: a payer who shorts a recipient cannot
+                    // fund the final commitment at all.
+                    if run.funded_count == run.expected_count {
+                        assert(run.total_committed == run.expected_total, errors::UNDER_COMMITTED);
+                        run.closed = true;
+                    }
                     self.runs.write(run_id, run);
 
                     self
@@ -181,6 +223,9 @@ pub mod Payroll {
                     [].span()
                 },
                 PayrollOperation::Claim => {
+                    // The caller never passes commitment_hash on claim: it is
+                    // recomputed from the revealed secret preimage, so only a
+                    // holder of the secret can address a commitment.
                     let commitment_hash = super::compute_commitment_hash(secret);
                     let entry = self.commitments.read(commitment_hash);
                     assert(entry.token.is_non_zero(), errors::COMMITMENT_NOT_FOUND);
