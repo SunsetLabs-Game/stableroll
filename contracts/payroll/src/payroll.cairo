@@ -59,6 +59,10 @@ pub mod errors {
     pub const RUN_CLOSED: felt252 = 'RUN_CLOSED';
     pub const ZERO_COMMITMENT_HASH: felt252 = 'ZERO_COMMITMENT_HASH';
     pub const ZERO_AMOUNT: felt252 = 'ZERO_AMOUNT';
+    pub const ZERO_EXPECTED_COUNT: felt252 = 'ZERO_EXPECTED_COUNT';
+    pub const ZERO_EXPECTED_TOTAL: felt252 = 'ZERO_EXPECTED_TOTAL';
+    pub const ZERO_TOKEN: felt252 = 'ZERO_TOKEN';
+    pub const TOKEN_MISMATCH: felt252 = 'TOKEN_MISMATCH';
     pub const COMMITMENT_EXISTS: felt252 = 'COMMITMENT_EXISTS';
     pub const COMMITMENT_NOT_FOUND: felt252 = 'COMMITMENT_NOT_FOUND';
     pub const ALREADY_CLAIMED: felt252 = 'ALREADY_CLAIMED';
@@ -122,8 +126,18 @@ pub mod Payroll {
 
             match operation {
                 PayrollOperation::OpenRun => {
+                    // A run is "absent" iff expected_count == 0, so a run may
+                    // never be opened with expected_count == 0 — it would be
+                    // indistinguishable from a run that was never opened, and
+                    // every later FundCommitment would revert RUN_NOT_FOUND.
                     let existing = self.runs.read(run_id);
                     assert(existing.expected_count.is_zero(), errors::RUN_EXISTS);
+                    assert(expected_count.is_non_zero(), errors::ZERO_EXPECTED_COUNT);
+                    // `amount` doubles as expected_total for OpenRun (documented
+                    // dual use, to avoid a 10th privacy_invoke parameter).
+                    // Zero would make every FundCommitment revert OVER_COMMITTED.
+                    assert(amount.is_non_zero(), errors::ZERO_EXPECTED_TOTAL);
+                    assert(token.is_non_zero(), errors::ZERO_TOKEN);
                     self
                         .runs
                         .write(
@@ -147,6 +161,9 @@ pub mod Payroll {
                     assert(!run.closed, errors::RUN_CLOSED);
                     assert(commitment_hash.is_non_zero(), errors::ZERO_COMMITMENT_HASH);
                     assert(amount.is_non_zero(), errors::ZERO_AMOUNT);
+                    // Without this, a run's aggregate totals would silently sum
+                    // amounts denominated in different tokens.
+                    assert(token == run.token, errors::TOKEN_MISMATCH);
 
                     let existing = self.commitments.read(commitment_hash);
                     assert(existing.token.is_zero(), errors::COMMITMENT_EXISTS);
