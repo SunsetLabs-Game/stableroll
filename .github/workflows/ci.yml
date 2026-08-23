@@ -21,7 +21,16 @@ jobs:
       - uses: software-mansion/setup-scarb@v1
       - uses: foundry-rs/setup-snfoundry@v6
 
-      - run: scarb build
+      # On a cold cache, Scarb races itself fetching a git dependency shared
+      # by multiple workspace members (starkware-starknet-utils, pulled in by
+      # both `privacy` and `vesu_lending_anonymizer`), failing with
+      # "Directory not empty" / "Refusing to initialize the non-empty
+      # directory". A second invocation always succeeds, since the git
+      # checkout left behind by the failed attempt is already complete by
+      # then. Reproduced locally on a clean cache; not specific to this repo's
+      # code, so retry instead of masking it with `continue-on-error`.
+      - name: scarb build (retrying the known cold-cache git-fetch race)
+        run: scarb build || scarb build || scarb build
       - run: snforge test
 
   typescript:
