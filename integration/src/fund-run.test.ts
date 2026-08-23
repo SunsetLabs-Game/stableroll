@@ -14,13 +14,12 @@ const PAYROLL_OPERATION_FUND_COMMITMENT = 1n;
  * exact real positional Serde order:
  * `(operation, run_id, commitment_hash, token, amount, expected_count, secret, note_id)`
  * — verified directly against `contracts/payroll/src/payroll.cairo`'s
- * `IPayroll::privacy_invoke` signature and the `FundCommitment` match arm,
- * and cross-checked against the plan's own Task 2 Cairo test snippet
- * (`.privacy_invoke(PayrollOperation::FundCommitment, run_id, 'COMMIT-A', token, 100_u128, 0, 0, 0)`),
- * which confirms `expected_count`, `secret`, and `note_id` are all unused
- * (and passed as 0) for the `FundCommitment` branch — that branch takes
- * `commitment_hash` directly rather than deriving it from `secret` (only
- * `Claim` recomputes the hash from `secret`).
+ * `IPayroll::privacy_invoke` signature and the `FundCommitment` match arm.
+ * `expected_count` and `note_id` are unused (passed as 0) for this branch;
+ * `commitment_hash` is passed directly rather than derived from `secret`
+ * (only `Claim` recomputes the hash from `secret`). `secret` itself IS used
+ * here: since docs/adr-run-ownership.md, it must be the run's owner_secret
+ * (the same value passed to `OpenRun`), or the call reverts `NOT_RUN_OWNER`.
  *
  * The pool calls this contract's fixed `privacy_invoke` entrypoint itself
  * once it has verified the proof, so `CallDetails` (the SDK/starknet.js
@@ -33,6 +32,7 @@ function buildFundCommitmentCall(params: {
   commitmentHash: bigint;
   token: string;
   amount: bigint;
+  runOwnerSecret: bigint;
 }) {
   return {
     contractAddress: params.payrollAddress,
@@ -43,7 +43,7 @@ function buildFundCommitmentCall(params: {
       num.toHex(params.token),
       num.toHex(params.amount), // u128 fits in a single felt (Cairo Serde: 1 felt, unlike u256's 2)
       num.toHex(0), // expected_count — unused for FundCommitment
-      num.toHex(0), // secret — unused for FundCommitment (commitment_hash is passed directly)
+      num.toHex(params.runOwnerSecret), // proves the caller opened this run
       num.toHex(0), // note_id — unused for FundCommitment
     ],
   };
@@ -60,7 +60,9 @@ function buildFundCommitmentCall(params: {
 // `SEPOLIA_RUN_ID` must reference a run already opened on the deployed
 // Payroll contract (via a separate `PayrollOperation::OpenRun` privacy_invoke
 // — out of scope for this task, which only funds a commitment against an
-// existing run).
+// existing run). Since docs/adr-run-ownership.md, that OpenRun call fixes an
+// owner_secret this run must be funded with; `SEPOLIA_RUN_OWNER_SECRET` must
+// hold that same value.
 describe("fund a payroll run", () => {
   it("deposits into the pool and routes to the Payroll contract via InvokeExternal", async () => {
     // starknet.js 10.x's `Account` constructor takes a single options object
@@ -75,6 +77,7 @@ describe("fund a payroll run", () => {
     const transfers = await getTransfers(account);
 
     const runId = BigInt(requireEnv("SEPOLIA_RUN_ID"));
+    const runOwnerSecret = BigInt(requireEnv("SEPOLIA_RUN_OWNER_SECRET"));
     const secret = process.env.TEST_COMMITMENT_SECRET ?? "task-4-fund-run-secret";
     const commitmentHash = computeCommitmentHash(secret);
     const amount = 100n;
@@ -95,6 +98,7 @@ describe("fund a payroll run", () => {
           commitmentHash,
           token: SEPOLIA_CONFIG.strkAddress,
           amount,
+          runOwnerSecret,
         }),
       )
       .surplusTo(account.address)
