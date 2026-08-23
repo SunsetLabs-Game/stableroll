@@ -8,8 +8,12 @@ use starknet::ContractAddress;
 /// always the pool — a stored "payer" could only ever be the pool's address.
 /// Storing the *real* payer would also defeat the purpose of routing through the
 /// pool at all: it would publish the very link the pool exists to hide.
-/// Run-level authorization is therefore an open design question — see the
-/// `run_id` squatting / third-party funding issue in the tracker.
+///
+/// Run ownership (see `docs/adr-run-ownership.md`) is instead proven with a
+/// secret, never an address: `run_id` must equal `compute_run_id(owner_secret)`
+/// at `OpenRun`, which makes a target `run_id` infeasible to squat without
+/// knowing the payer's secret, and `owner_commitment` gates every later
+/// `FundCommitment` on knowledge of that same secret.
 #[derive(Serde, Copy, Drop, PartialEq, Debug, starknet::Store)]
 pub struct RunInfo {
     pub token: ContractAddress,
@@ -27,6 +31,10 @@ pub struct RunInfo {
     /// `total_committed == expected_total`. Until then the run cannot be
     /// complete, which is what makes underfunding detectable.
     pub closed: bool,
+    /// `compute_run_owner_commitment(owner_secret)`, fixed at `OpenRun`. Every
+    /// `FundCommitment` must reveal the same `owner_secret` to prove it comes
+    /// from whoever opened the run.
+    pub owner_commitment: felt252,
 }
 
 #[derive(Serde, Copy, Drop, PartialEq, Debug, starknet::Store)]
@@ -54,6 +62,11 @@ pub trait IPayroll<T> {
     /// (`funded_count` never reaches `expected_count`, so `closed` stays false)
     /// or by underpaying (the final `FundCommitment` reverts `UNDER_COMMITTED`).
     fn is_complete(self: @T, run_id: felt252) -> bool;
+    /// `secret` is overloaded by operation (see `docs/adr-run-ownership.md`):
+    /// for `OpenRun` it is the run's `owner_secret` (`run_id` must equal
+    /// `compute_run_id(secret)`); for `FundCommitment` it must be that same
+    /// run's `owner_secret`, proving the caller is the run's opener; for
+    /// `Claim` it is the commitment secret, as before.
     fn privacy_invoke(
         ref self: T,
         operation: PayrollOperation,
@@ -68,6 +81,8 @@ pub trait IPayroll<T> {
 }
 
 pub const PAYROLL_COMMITMENT_TAG: felt252 = 'PAYROLL_COMMITMENT_TAG:V1';
+pub const PAYROLL_RUN_ID_TAG: felt252 = 'PAYROLL_RUN_ID_TAG:V1';
+pub const PAYROLL_RUN_OWNER_TAG: felt252 = 'PAYROLL_RUN_OWNER_TAG:V1';
 
 /// Mirrored byte-for-byte by `computeCommitmentHash` in
 /// `integration/src/config.ts`. Both operands are raw felt252 values — neither
@@ -75,6 +90,22 @@ pub const PAYROLL_COMMITMENT_TAG: felt252 = 'PAYROLL_COMMITMENT_TAG:V1';
 /// becomes permanently unclaimable.
 pub fn compute_commitment_hash(secret: felt252) -> felt252 {
     core::poseidon::poseidon_hash_span([PAYROLL_COMMITMENT_TAG, secret].span())
+}
+
+/// `run_id` must equal this for the `OpenRun` caller's own `owner_secret`, so a
+/// squatter who does not know that secret cannot produce a valid `OpenRun` call
+/// for a `run_id` the legitimate payer intends to use — see
+/// `docs/adr-run-ownership.md`.
+pub fn compute_run_id(owner_secret: felt252) -> felt252 {
+    core::poseidon::poseidon_hash_span([PAYROLL_RUN_ID_TAG, owner_secret].span())
+}
+
+/// Stored on `RunInfo` at `OpenRun`. A different domain tag from
+/// `compute_run_id` so that `run_id` being public never leaks this value —
+/// Poseidon is one-way, but keeping the two derivations in separate domains
+/// avoids relying on that alone.
+pub fn compute_run_owner_commitment(owner_secret: felt252) -> felt252 {
+    core::poseidon::poseidon_hash_span([PAYROLL_RUN_OWNER_TAG, owner_secret].span())
 }
 
 pub mod errors {
@@ -87,6 +118,9 @@ pub mod errors {
     pub const ZERO_EXPECTED_COUNT: felt252 = 'ZERO_EXPECTED_COUNT';
     pub const ZERO_EXPECTED_TOTAL: felt252 = 'ZERO_EXPECTED_TOTAL';
     pub const ZERO_TOKEN: felt252 = 'ZERO_TOKEN';
+    pub const ZERO_OWNER_SECRET: felt252 = 'ZERO_OWNER_SECRET';
+    pub const RUN_ID_MISMATCH: felt252 = 'RUN_ID_MISMATCH';
+    pub const NOT_RUN_OWNER: felt252 = 'NOT_RUN_OWNER';
     pub const TOKEN_MISMATCH: felt252 = 'TOKEN_MISMATCH';
     pub const COMMITMENT_EXISTS: felt252 = 'COMMITMENT_EXISTS';
     pub const COMMITMENT_NOT_FOUND: felt252 = 'COMMITMENT_NOT_FOUND';
@@ -167,6 +201,13 @@ pub mod Payroll {
                     // Zero would make every FundCommitment revert OVER_COMMITTED.
                     assert(amount.is_non_zero(), errors::ZERO_EXPECTED_TOTAL);
                     assert(token.is_non_zero(), errors::ZERO_TOKEN);
+                    // `secret` here is the run's owner_secret (see
+                    // docs/adr-run-ownership.md). Requiring run_id to equal its
+                    // derived hash makes a chosen run_id infeasible to squat
+                    // without knowing the secret behind it.
+                    assert(secret.is_non_zero(), errors::ZERO_OWNER_SECRET);
+                    assert(run_id == super::compute_run_id(secret), errors::RUN_ID_MISMATCH);
+                    let owner_commitment = super::compute_run_owner_commitment(secret);
                     self
                         .runs
                         .write(
@@ -180,6 +221,7 @@ pub mod Payroll {
                                 total_committed: 0,
                                 total_paid: 0,
                                 closed: false,
+                                owner_commitment,
                             },
                         );
                     [].span()
@@ -193,6 +235,13 @@ pub mod Payroll {
                     // Without this, a run's aggregate totals would silently sum
                     // amounts denominated in different tokens.
                     assert(token == run.token, errors::TOKEN_MISMATCH);
+                    // Only whoever opened the run knows owner_secret; this is
+                    // what stops a third party from funding into someone
+                    // else's run (see docs/adr-run-ownership.md).
+                    assert(
+                        super::compute_run_owner_commitment(secret) == run.owner_commitment,
+                        errors::NOT_RUN_OWNER,
+                    );
 
                     let existing = self.commitments.read(commitment_hash);
                     assert(existing.token.is_zero(), errors::COMMITMENT_EXISTS);
@@ -217,7 +266,8 @@ pub mod Payroll {
                     self
                         .commitments
                         .write(
-                            commitment_hash, CommitmentEntry { run_id, token, amount, claimed: false },
+                            commitment_hash,
+                            CommitmentEntry { run_id, token, amount, claimed: false },
                         );
 
                     [].span()
@@ -231,7 +281,9 @@ pub mod Payroll {
                     assert(entry.token.is_non_zero(), errors::COMMITMENT_NOT_FOUND);
                     assert(!entry.claimed, errors::ALREADY_CLAIMED);
 
-                    self.commitments.write(commitment_hash, CommitmentEntry { claimed: true, ..entry });
+                    self
+                        .commitments
+                        .write(commitment_hash, CommitmentEntry { claimed: true, ..entry });
 
                     let mut run = self.runs.read(entry.run_id);
                     run.paid_count += 1;

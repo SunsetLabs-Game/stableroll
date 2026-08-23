@@ -1,8 +1,9 @@
 use payroll::payroll::{
     IPayrollDispatcher, IPayrollDispatcherTrait, PayrollOperation, RunInfo, compute_commitment_hash,
+    compute_run_id,
 };
 use snforge_std::{
-    declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address, start_mock_call,
+    ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address, start_mock_call,
 };
 use starknet::ContractAddress;
 
@@ -32,7 +33,8 @@ fn setup() -> (IPayrollDispatcher, ContractAddress) {
 #[test]
 fn test_fund_commitment_increments_run_totals() {
     let (dispatcher, token) = setup();
-    let run_id: felt252 = 'RUN-1';
+    let owner_secret: felt252 = 'OWNER-1';
+    let run_id = compute_run_id(owner_secret);
 
     dispatcher
         .privacy_invoke(
@@ -42,7 +44,7 @@ fn test_fund_commitment_increments_run_totals() {
             token,
             150_u128, // amount doubles as expected_total for OpenRun
             2, // expected_count
-            0,
+            owner_secret,
             0,
         );
 
@@ -54,7 +56,7 @@ fn test_fund_commitment_increments_run_totals() {
             token,
             100_u128,
             0,
-            0,
+            owner_secret,
             0,
         );
 
@@ -71,9 +73,11 @@ fn test_fund_commitment_increments_run_totals() {
 #[test]
 fn test_run_incomplete_until_all_commitments_claimed() {
     let (dispatcher, token) = setup();
-    let run_id: felt252 = 'RUN-2';
+    let owner_secret: felt252 = 'OWNER-2';
+    let run_id = compute_run_id(owner_secret);
 
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, owner_secret, 0);
 
     // FundCommitment's commitment_hash must equal compute_commitment_hash(secret): the payer
     // computes the hash off-chain from a secret it will later share with the recipient, and
@@ -82,11 +86,15 @@ fn test_run_incomplete_until_all_commitments_claimed() {
     let hash_b = compute_commitment_hash('SECRET-B');
 
     dispatcher
-        .privacy_invoke(PayrollOperation::FundCommitment, run_id, hash_a, token, 100_u128, 0, 0, 0);
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash_a, token, 100_u128, 0, owner_secret, 0,
+        );
     assert(!dispatcher.is_complete(run_id), 'incomplete: partially funded');
 
     dispatcher
-        .privacy_invoke(PayrollOperation::FundCommitment, run_id, hash_b, token, 50_u128, 0, 0, 0);
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash_b, token, 50_u128, 0, owner_secret, 0,
+        );
     assert(dispatcher.get_run(run_id).closed, 'closed once fully funded');
     assert(!dispatcher.is_complete(run_id), 'incomplete: 0 claims');
 
@@ -107,10 +115,12 @@ fn test_run_incomplete_until_all_commitments_claimed() {
 #[test]
 fn test_omitted_recipient_can_never_be_marked_complete() {
     let (dispatcher, token) = setup();
-    let run_id: felt252 = 'RUN-OMIT';
+    let owner_secret: felt252 = 'OWNER-OMIT';
+    let run_id = compute_run_id(owner_secret);
 
     // Promises 2 recipients / 150 total, but only ever funds one of them.
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, owner_secret, 0);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -119,7 +129,7 @@ fn test_omitted_recipient_can_never_be_marked_complete() {
             token,
             100_u128,
             0,
-            0,
+            owner_secret,
             0,
         );
 
@@ -142,9 +152,11 @@ fn test_omitted_recipient_can_never_be_marked_complete() {
 #[should_panic(expected: 'UNDER_COMMITTED')]
 fn test_underfunding_the_last_commitment_reverts() {
     let (dispatcher, token) = setup();
-    let run_id: felt252 = 'RUN-SHORT';
+    let owner_secret: felt252 = 'OWNER-SHORT';
+    let run_id = compute_run_id(owner_secret);
 
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, owner_secret, 0);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -153,7 +165,7 @@ fn test_underfunding_the_last_commitment_reverts() {
             token,
             100_u128,
             0,
-            0,
+            owner_secret,
             0,
         );
     // Promised 150 across 2 recipients; this pays the second only 40.
@@ -165,7 +177,7 @@ fn test_underfunding_the_last_commitment_reverts() {
             token,
             40_u128,
             0,
-            0,
+            owner_secret,
             0,
         );
 }
@@ -176,9 +188,11 @@ fn test_underfunding_the_last_commitment_reverts() {
 #[should_panic(expected: 'RUN_CLOSED')]
 fn test_cannot_fund_more_recipients_than_promised() {
     let (dispatcher, token) = setup();
-    let run_id: felt252 = 'RUN-EXTRA';
+    let owner_secret: felt252 = 'OWNER-EXTRA';
+    let run_id = compute_run_id(owner_secret);
 
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 1, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 1, owner_secret, 0);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -187,7 +201,7 @@ fn test_cannot_fund_more_recipients_than_promised() {
             token,
             150_u128,
             0,
-            0,
+            owner_secret,
             0,
         );
     // Run is now closed at 1/1; a second commitment must not slip in.
@@ -199,7 +213,7 @@ fn test_cannot_fund_more_recipients_than_promised() {
             token,
             1_u128,
             0,
-            0,
+            owner_secret,
             0,
         );
 }
@@ -209,9 +223,11 @@ fn test_cannot_fund_more_recipients_than_promised() {
 fn test_commitment_token_must_match_the_run() {
     let (dispatcher, token) = setup();
     let other: ContractAddress = OTHER_TOKEN.try_into().unwrap();
-    let run_id: felt252 = 'RUN-TOK';
+    let owner_secret: felt252 = 'OWNER-TOK';
+    let run_id = compute_run_id(owner_secret);
 
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, owner_secret, 0);
     // Would otherwise sum two different tokens' amounts into one total.
     dispatcher
         .privacy_invoke(
@@ -221,7 +237,7 @@ fn test_commitment_token_must_match_the_run() {
             other,
             100_u128,
             0,
-            0,
+            owner_secret,
             0,
         );
 }
@@ -232,28 +248,84 @@ fn test_open_run_rejects_zero_expected_count() {
     let (dispatcher, token) = setup();
     // expected_count == 0 is how "run does not exist" is encoded, so a run
     // opened with 0 would be silently unusable rather than loudly rejected.
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, 'RUN-Z1', 0, token, 150_u128, 0, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, 'RUN-Z1', 0, token, 150_u128, 0, 'OWNER-Z1', 0);
 }
 
 #[test]
 #[should_panic(expected: 'ZERO_EXPECTED_TOTAL')]
 fn test_open_run_rejects_zero_expected_total() {
     let (dispatcher, token) = setup();
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, 'RUN-Z2', 0, token, 0_u128, 2, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, 'RUN-Z2', 0, token, 0_u128, 2, 'OWNER-Z2', 0);
+}
+
+/// Attack 1 from the tracker issue: an attacker who guesses/learns a run_id
+/// the payer intends to use cannot pre-open it, because OpenRun requires
+/// run_id == compute_run_id(secret) — producing a valid call for a *chosen*
+/// run_id requires knowing a secret that hashes to it, which the attacker does
+/// not have.
+#[test]
+#[should_panic(expected: 'RUN_ID_MISMATCH')]
+fn test_open_run_rejects_run_id_not_derived_from_secret() {
+    let (dispatcher, token) = setup();
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun, 'SQUATTED-RUN', 0, token, 100_u128, 1, 'ANY-SECRET', 0,
+        );
+}
+
+#[test]
+#[should_panic(expected: 'ZERO_OWNER_SECRET')]
+fn test_open_run_rejects_zero_owner_secret() {
+    let (dispatcher, token) = setup();
+    dispatcher.privacy_invoke(PayrollOperation::OpenRun, 'RUN-Z3', 0, token, 100_u128, 1, 0, 0);
+}
+
+/// Attack 2 from the tracker issue: a third party who does not know the run's
+/// owner_secret cannot fund into an existing run, even with a commitment only
+/// they know the secret to.
+#[test]
+#[should_panic(expected: 'NOT_RUN_OWNER')]
+fn test_fund_commitment_rejects_third_party_without_owner_secret() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-GRIEF';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    // The griefer knows the secret behind their own commitment_hash, but not
+    // the run's owner_secret.
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('GRIEFER-SECRET'),
+            token,
+            100_u128,
+            0,
+            'WRONG-OWNER-SECRET',
+            0,
+        );
 }
 
 #[test]
 #[should_panic(expected: 'ALREADY_CLAIMED')]
 fn test_double_claim_reverts() {
     let (dispatcher, token) = setup();
-    let run_id: felt252 = 'RUN-3';
+    let owner_secret: felt252 = 'OWNER-3';
+    let run_id = compute_run_id(owner_secret);
 
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
 
     let hash_c = compute_commitment_hash('SECRET-C');
     dispatcher
-        .privacy_invoke(PayrollOperation::FundCommitment, run_id, hash_c, token, 100_u128, 0, 0, 0);
-    dispatcher.privacy_invoke(PayrollOperation::Claim, run_id, 0, token, 0, 0, 'SECRET-C', 'NOTE-C');
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash_c, token, 100_u128, 0, owner_secret, 0,
+        );
+    dispatcher
+        .privacy_invoke(PayrollOperation::Claim, run_id, 0, token, 0, 0, 'SECRET-C', 'NOTE-C');
     dispatcher
         .privacy_invoke(PayrollOperation::Claim, run_id, 0, token, 0, 0, 'SECRET-C', 'NOTE-C2');
 }
@@ -262,9 +334,11 @@ fn test_double_claim_reverts() {
 #[should_panic(expected: 'COMMITMENT_NOT_FOUND')]
 fn test_claim_with_unknown_secret_reverts() {
     let (dispatcher, token) = setup();
-    let run_id: felt252 = 'RUN-4';
+    let owner_secret: felt252 = 'OWNER-4';
+    let run_id = compute_run_id(owner_secret);
 
-    dispatcher.privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, 0, 0);
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -273,7 +347,7 @@ fn test_claim_with_unknown_secret_reverts() {
             token,
             100_u128,
             0,
-            0,
+            owner_secret,
             0,
         );
     dispatcher.privacy_invoke(PayrollOperation::Claim, run_id, 0, token, 0, 0, 'WRONG', 'NOTE-D');
