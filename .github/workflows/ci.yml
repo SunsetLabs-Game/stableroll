@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  cairo:
+    name: Cairo (scarb build + snforge test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/payroll
+    steps:
+      - uses: actions/checkout@v4
+
+      # Both actions read scarb/starknet-foundry versions from the repo root
+      # .tool-versions when no explicit version input is given, so the pin
+      # lives in exactly one place.
+      - uses: software-mansion/setup-scarb@v1
+      - uses: foundry-rs/setup-snfoundry@v6
+
+      # On a cold cache, Scarb races itself fetching a git dependency shared
+      # by multiple workspace members (starkware-starknet-utils, pulled in by
+      # both `privacy` and `vesu_lending_anonymizer`), failing with
+      # "Directory not empty" / "Refusing to initialize the non-empty
+      # directory". A second invocation always succeeds, since the git
+      # checkout left behind by the failed attempt is already complete by
+      # then. Reproduced locally on a clean cache; not specific to this repo's
+      # code, so retry instead of masking it with `continue-on-error`.
+      - name: scarb build (retrying the known cold-cache git-fetch race)
+        run: scarb build || scarb build || scarb build
+      - run: snforge test
+
+  typescript:
+    name: TypeScript (tokenless suite + typecheck)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: integration
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run test:offline
+
+      # `@starkware-libs/starknet-privacy-sdk` is an optionalDependency that
+      # needs a GitHub Packages token `npm ci` does not have here (see
+      # CLAUDE.md §3), so it never installs and every import of it resolves
+      # to TS2307 module-not-found. Those specific errors are expected and
+      # tolerated; any other tsc error (including a new one introduced
+      # elsewhere) fails the job.
+      - name: Typecheck (tolerating known SDK module-resolution errors)
+        run: |
+          set +e
+          output=$(npx tsc --noEmit 2>&1)
+          exit_code=$?
+          set -e
+          echo "$output"
+
+          if [ "$exit_code" -eq 0 ]; then
+            exit 0
+          fi
+
+          unexpected=$(echo "$output" | grep "error TS" | grep -v -E "error TS2307: Cannot find module '@starkware-libs/starknet-privacy-sdk(/testing)?'" || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::Unexpected tsc errors (only TS2307 for @starkware-libs/starknet-privacy-sdk is tolerated):"
+            echo "$unexpected"
+            exit 1
+          fi
+
+          echo "Only the known SDK module-resolution errors are present; treating as pass."
