@@ -51,7 +51,7 @@ This repo is mid-build. Only claim the chains and legs that are real:
 | Starknet → Starknet fund + claim, via the pool | Done and tested locally. Not yet exercised against live Sepolia or mainnet infrastructure |
 | EVM claim leg (privacy-bridge) | Wired against the real API (`cashOut`, see `docs/evm-claim-coverage.md`). Not yet exercised against live testnet infrastructure |
 | Solana claim leg (NEAR Intents) | Planned — not implemented yet |
-| Waku recipient notification | Planned — not implemented yet |
+| Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`) — not yet wired to `FundCommitment` |
 | Cavos payer/recipient UX | Planned — not implemented yet |
 | Mainnet eligibility transactions | Not yet recorded — `strk20.json`'s `transactions` array is currently empty |
 
@@ -79,10 +79,13 @@ Recipient ──claim (reveals commitment secret)──▶ Payroll.privacy_invok
   ownership proven by secret rather than address).
 - **`integration`** — TypeScript tests and helpers driving the pool +
   Payroll contract via the privacy SDK.
-- Cross-chain claim legs (EVM, Solana) and the notification/UX layers
-  (Waku, Cavos) are separate, not-yet-built components that will sit
-  downstream of a Starknet claim — they never touch custody or the
-  privacy-critical accounting above.
+- **`notify`** — Waku ECIES key/topic derivation and encrypted claim
+  notifications, keyed off the same commitment secret as the on-chain claim,
+  never a Starknet address (see the package's `topics.ts`). Not yet called
+  from anywhere else in the repo.
+- The Solana claim leg and the Cavos UX layer are separate, not-yet-built
+  components that will sit downstream of a Starknet claim — they never touch
+  custody or the privacy-critical accounting above.
 
 ## Dependency transparency
 
@@ -115,6 +118,15 @@ snforge test
 cd integration
 npm install
 npm run test:offline
+```
+
+### Notify — Waku recipient notifications
+
+```bash
+cd notify
+npm install
+npm run test:offline   # deterministic derivation tests, no network
+npm test               # full suite — talks to the live Waku test fleet, no credentials needed
 ```
 
 ### TypeScript — full suite (needs a GitHub Packages token)

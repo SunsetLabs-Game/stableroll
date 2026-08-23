@@ -75,3 +75,24 @@ jobs:
           fi
 
           echo "Only the known SDK/bridge module-resolution errors are present; treating as pass."
+
+  notify:
+    name: Notify (tokenless suite + typecheck)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: notify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      # `test` (not `test:offline`) here would hit the live Waku test fleet
+      # (see src/send-claim-notification.test.ts) — no credentials needed,
+      # but public P2P infra this repo doesn't control, so it stays out of
+      # the required CI gate. Run it manually with `npm test` in this
+      # directory to exercise the real send/receive path.
+      - run: npm run test:offline
+      - run: npm run typecheck
