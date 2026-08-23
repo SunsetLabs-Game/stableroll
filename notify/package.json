@@ -1,0 +1,22 @@
+{
+  "name": "payroll-notify",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:offline": "vitest run topics.test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@waku/sdk": "0.0.36",
+    "@waku/message-encryption": "0.0.38",
+    "@waku/utils": "0.0.27",
+    "@waku/interfaces": "0.0.34",
+    "@noble/hashes": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "vitest": "^2.0.0",
+    "typescript": "^5.5.0"
+  }
+}
