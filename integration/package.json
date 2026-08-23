@@ -17,6 +17,7 @@
     "typescript": "^5.5.0"
   },
   "optionalDependencies": {
-    "@starkware-libs/starknet-privacy-sdk": "0.14.3-rc.5"
+    "@starkware-libs/starknet-privacy-sdk": "0.14.3-rc.5",
+    "@starkware-libs/starknet-privacy-bridge": "0.1.21"
   }
 }

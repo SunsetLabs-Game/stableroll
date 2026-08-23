@@ -48,9 +48,10 @@ jobs:
       - run: npm ci
       - run: npm run test:offline
 
-      # `@starkware-libs/starknet-privacy-sdk` is an optionalDependency that
-      # needs a GitHub Packages token `npm ci` does not have here (see
-      # CLAUDE.md §3), so it never installs and every import of it resolves
+      # `@starkware-libs/starknet-privacy-sdk` and
+      # `@starkware-libs/starknet-privacy-bridge` are optionalDependencies
+      # that need a GitHub Packages token `npm ci` does not have here (see
+      # CLAUDE.md §3), so neither installs and every import of either resolves
       # to TS2307 module-not-found. Those specific errors are expected and
       # tolerated; any other tsc error (including a new one introduced
       # elsewhere) fails the job.
@@ -66,11 +67,11 @@ jobs:
             exit 0
           fi
 
-          unexpected=$(echo "$output" | grep "error TS" | grep -v -E "error TS2307: Cannot find module '@starkware-libs/starknet-privacy-sdk(/testing)?'" || true)
+          unexpected=$(echo "$output" | grep "error TS" | grep -v -E "error TS2307: Cannot find module '@starkware-libs/starknet-privacy-(sdk(/testing)?|bridge)'" || true)
           if [ -n "$unexpected" ]; then
-            echo "::error::Unexpected tsc errors (only TS2307 for @starkware-libs/starknet-privacy-sdk is tolerated):"
+            echo "::error::Unexpected tsc errors (only TS2307 for the two @starkware-libs optional packages is tolerated):"
             echo "$unexpected"
             exit 1
           fi
 
-          echo "Only the known SDK module-resolution errors are present; treating as pass."
+          echo "Only the known SDK/bridge module-resolution errors are present; treating as pass."

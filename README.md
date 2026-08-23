@@ -49,7 +49,7 @@ This repo is mid-build. Only claim the chains and legs that are real:
 |---|---|
 | `contracts/payroll` — Cairo contract, `privacy_invoke`-driven run accounting, run-ownership authorization | Done — tested (`snforge test`, CI-enforced) |
 | Starknet → Starknet fund + claim, via the pool | Done and tested locally. Not yet exercised against live Sepolia or mainnet infrastructure |
-| EVM claim leg (privacy-bridge) | Planned — not implemented yet |
+| EVM claim leg (privacy-bridge) | Wired against the real API (`cashOut`, see `docs/evm-claim-coverage.md`). Not yet exercised against live testnet infrastructure |
 | Solana claim leg (NEAR Intents) | Planned — not implemented yet |
 | Waku recipient notification | Planned — not implemented yet |
 | Cavos payer/recipient UX | Planned — not implemented yet |
