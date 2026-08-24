@@ -14,6 +14,7 @@ import {
 // in starkware-libs/starknet-privacy at fetch time) — it is NOT exported
 // from the package root.
 import { ContractDiscoveryProvider, type PoolContractInterface } from "@starkware-libs/starknet-privacy-sdk/testing";
+import { requireEnv } from "./env.js";
 
 export const SEPOLIA_CONFIG = {
   chainId: constants.StarknetChainId.SN_SEPOLIA,
@@ -40,7 +41,14 @@ export const SEPOLIA_CONFIG = {
 // Commitment-hash derivation lives in its own SDK-free module so its
 // Cairo-parity test can run without a GitHub Packages token. Re-exported here
 // so existing importers keep working.
-export { PAYROLL_COMMITMENT_TAG, computeCommitmentHash } from "./commitment.js";
+export {
+  PAYROLL_COMMITMENT_TAG,
+  PAYROLL_RUN_ID_TAG,
+  PAYROLL_RUN_OWNER_TAG,
+  computeCommitmentHash,
+  computeRunId,
+  computeRunOwnerCommitment,
+} from "./commitment.js";
 
 export const SEPOLIA_RPC_PROVIDER = new RpcProvider({ nodeUrl: SEPOLIA_CONFIG.rpcUrl });
 
@@ -67,16 +75,18 @@ async function buildPoolContract(
 }
 
 /**
- * Reusable factory for a `createPrivateTransfers` handle wired to Sepolia,
- * used by fund-run.test.ts and (per the task brief) importable by later
- * integration tasks (Task 5, Plan 2).
+ * Reusable factory for a `createPrivateTransfers` handle wired to Sepolia.
  *
- * Requires SEPOLIA_RPC_URL, SEPOLIA_POOL_ADDRESS, SEPOLIA_PROVING_SERVICE_URL,
- * and TEST_VIEWING_KEY to be set — see task-4-report.md for why none of
- * these could be filled with real values in this environment.
+ * `options.viewingKey` lets a recipient use their own key instead of the
+ * funder's `TEST_VIEWING_KEY`. Defaults to the funder key so existing
+ * `getTransfers(account)` call sites stay unchanged.
  */
-export async function getTransfers(account: AccountInterface | Account) {
+export async function getTransfers(
+  account: AccountInterface | Account,
+  options?: { viewingKey?: bigint },
+) {
   const pool = await buildPoolContract(SEPOLIA_RPC_PROVIDER, SEPOLIA_CONFIG.poolAddress);
+  const viewingKey = options?.viewingKey ?? BigInt(requireEnv("TEST_VIEWING_KEY"));
 
   return createPrivateTransfers({
     account,
@@ -84,7 +94,7 @@ export async function getTransfers(account: AccountInterface | Account) {
       // `ViewingKeyProvider.getViewingKey()` is declared `Promise<ViewingKey>`
       // in sdk/src/interfaces.ts — must be async, a bare `() => BigInt(...)`
       // returning a plain `bigint` does not satisfy the interface.
-      getViewingKey: async () => BigInt(requireEnv("TEST_VIEWING_KEY")),
+      getViewingKey: async () => viewingKey,
     },
     provingProvider: new ProvingServiceProofProvider(
       requireEnv("SEPOLIA_PROVING_SERVICE_URL"),
@@ -96,8 +106,9 @@ export async function getTransfers(account: AccountInterface | Account) {
   });
 }
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
+/** Payroll dispatcher against the deployed Sepolia helper, ABI fetched on-chain. */
+export async function getPayrollContract() {
+  const address = requireEnv("SEPOLIA_PAYROLL_ADDRESS");
+  const { abi } = await SEPOLIA_RPC_PROVIDER.getClassAt(address);
+  return new Contract({ abi, address, providerOrAccount: SEPOLIA_RPC_PROVIDER });
 }

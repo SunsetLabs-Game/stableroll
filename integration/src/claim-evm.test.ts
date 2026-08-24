@@ -1,14 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { Account, OutsideExecutionVersion, num, type OutsideExecutionOptions } from "starknet";
+import { Account } from "starknet";
 import type { InvokeCalldataBuilderArgs } from "@starkware-libs/starknet-privacy-sdk";
 import { cashOut, initBridgeConfig, bridgeEnvFromRecord } from "@starkware-libs/starknet-privacy-bridge";
 import { SEPOLIA_CONFIG, SEPOLIA_RPC_PROVIDER, getTransfers } from "./config.js";
-
-// PayrollOperation's Cairo Serde discriminant (contracts/payroll/src/payroll.cairo):
-// `enum PayrollOperation { OpenRun, FundCommitment, Claim }` — index 2, same
-// unit-variant-index encoding already verified for FundCommitment in
-// fund-run.test.ts.
-const PAYROLL_OPERATION_CLAIM = 2n;
+import { requireEnv } from "./env.js";
+import { buildClaimCall } from "./payroll-invoke.js";
+import { submitPrivateCall } from "./submit.js";
 
 // Destination chain for the cash-out leg: Base Sepolia, per
 // docs/evm-claim-coverage.md (chain id 84532, CCTP domain 6) — read directly
@@ -18,42 +15,6 @@ const PAYROLL_OPERATION_CLAIM = 2n;
 // was picked for cheap testnet gas.
 const BASE_SEPOLIA_CHAIN_ID = 84532;
 
-/**
- * Builds the raw felt calldata for `Payroll.privacy_invoke`'s `Claim` branch,
- * matching its exact real positional Serde order — verified directly against
- * `contracts/payroll/src/payroll.cairo`'s `IPayroll::privacy_invoke` signature
- * and the `Claim` match arm:
- * `(operation, run_id, commitment_hash, token, amount, expected_count, secret, note_id)`.
- * `run_id`, `commitment_hash`, `token`, `amount`, and `expected_count` are all
- * ignored by the `Claim` branch — it recomputes `commitment_hash` from
- * `secret` and looks up everything else (the real `run_id`, `token`, `amount`)
- * from the stored `CommitmentEntry`. They are passed here for calldata-shape
- * parity with the other operations, matching the convention `tests.cairo`
- * already uses (passing the real token/run_id even though the contract
- * doesn't check them for this branch).
- */
-function buildClaimCall(params: {
-  payrollAddress: string;
-  runId: bigint;
-  token: string;
-  secret: bigint;
-  noteId: bigint;
-}) {
-  return {
-    contractAddress: params.payrollAddress,
-    calldata: [
-      num.toHex(PAYROLL_OPERATION_CLAIM),
-      num.toHex(params.runId),
-      num.toHex(0), // commitment_hash — recomputed on-chain from secret
-      num.toHex(params.token),
-      num.toHex(0), // amount — read from the stored CommitmentEntry
-      num.toHex(0), // expected_count — unused for Claim
-      num.toHex(params.secret),
-      num.toHex(params.noteId),
-    ],
-  };
-}
-
 // Requires real Sepolia + testnet-CCTP credentials this environment does not
 // have (same gap fund-run.test.ts documents): a funded Sepolia account, a
 // hosted Sepolia proving-service URL, a deployed Sepolia STRK20 pool with an
@@ -61,7 +22,7 @@ function buildClaimCall(params: {
 // step), the bridge's Anonymizer contract addresses, and a Base Sepolia RPC
 // URL. None of those were available here, so this test could not be executed
 // against live infrastructure. The calldata shape is verified against real
-// Cairo source (see buildClaimCall's doc comment); the `cashOut` call is
+// Cairo source (`buildClaimCall` in payroll-invoke.ts); the `cashOut` call is
 // verified against @starkware-libs/starknet-privacy-bridge's real, published
 // `packages/bridge-core/src/core/bridgeOut.ts` (see docs/evm-claim-coverage.md
 // for exactly what was read and when) — neither signature is guessed.
@@ -109,24 +70,8 @@ describe("claim a payroll commitment and bridge it out to an EVM chain", () => {
       .surplusTo(account.address)
       .execute();
 
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    const callOptions: OutsideExecutionOptions = {
-      caller: account.address,
-      execute_after: nowSeconds - 3600,
-      execute_before: nowSeconds + 3600,
-    };
-    const outsideTransaction = await account.getOutsideTransaction(
-      callOptions,
-      callAndProof.call,
-      OutsideExecutionVersion.V2,
-    );
-    const claimTx = await account.executeFromOutside(outsideTransaction, {
-      tip: 0n,
-      proofFacts: callAndProof.proof.proofFacts,
-      proof: callAndProof.proof.data,
-    });
-    const claimReceipt = await SEPOLIA_RPC_PROVIDER.waitForTransaction(claimTx.transaction_hash);
-    expect(claimReceipt.isSuccess()).toBe(true);
+    const { txHash, receipt } = await submitPrivateCall(account, callAndProof);
+    expect(receipt.isSuccess()).toBe(true);
 
     // Step 2: cash out the claimed note to a chosen EVM address on Base
     // Sepolia. `cashOut` is @starkware-libs/starknet-privacy-bridge's real
@@ -156,13 +101,7 @@ describe("claim a payroll commitment and bridge it out to an EVM chain", () => {
     // the payer's Starknet address, this run's id, or the claimed commitment
     // hash — only `destination` and the bridged amount ever appear.
     console.log(
-      `claim tx=${claimTx.transaction_hash} cash-out burn=${result.burnTxHash} mint=${result.forwardTxHash ?? "(pending)"} destination=${result.destination}`,
+      `claim tx=${txHash} cash-out burn=${result.burnTxHash} mint=${result.forwardTxHash ?? "(pending)"} destination=${result.destination}`,
     );
   }, 300_000);
 });
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}

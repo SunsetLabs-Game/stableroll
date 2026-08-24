@@ -1,73 +1,30 @@
 import { describe, it, expect } from "vitest";
-import { Account, OutsideExecutionVersion, num, type OutsideExecutionOptions } from "starknet";
+import { Account } from "starknet";
 import type { InvokeCalldataBuilderArgs, TokenOperationsBuilder } from "@starkware-libs/starknet-privacy-sdk";
 import { SEPOLIA_CONFIG, SEPOLIA_RPC_PROVIDER, getTransfers, computeCommitmentHash } from "./config.js";
+import { requireEnv } from "./env.js";
+import { buildFundCommitmentCall } from "./payroll-invoke.js";
+import { submitPrivateCall } from "./submit.js";
 
-// PayrollOperation's Cairo Serde discriminant (contracts/payroll/src/payroll.cairo):
-// `enum PayrollOperation { OpenRun, FundCommitment, Claim }` — Cairo's derived
-// `Serde` for a unit-variant enum writes only the variant index (no payload
-// on any variant here), in declaration order.
-const PAYROLL_OPERATION_FUND_COMMITMENT = 1n;
-
-/**
- * Builds the raw felt calldata for `Payroll.privacy_invoke`, matching its
- * exact real positional Serde order:
- * `(operation, run_id, commitment_hash, token, amount, expected_count, secret, note_id)`
- * — verified directly against `contracts/payroll/src/payroll.cairo`'s
- * `IPayroll::privacy_invoke` signature and the `FundCommitment` match arm.
- * `expected_count` and `note_id` are unused (passed as 0) for this branch;
- * `commitment_hash` is passed directly rather than derived from `secret`
- * (only `Claim` recomputes the hash from `secret`). `secret` itself IS used
- * here: since docs/adr-run-ownership.md, it must be the run's owner_secret
- * (the same value passed to `OpenRun`), or the call reverts `NOT_RUN_OWNER`.
- *
- * The pool calls this contract's fixed `privacy_invoke` entrypoint itself
- * once it has verified the proof, so `CallDetails` (the SDK/starknet.js
- * type `.invoke()`'s callBuilder must return) carries only
- * `{ contractAddress, calldata }` — no `entrypoint` field to set.
- */
-function buildFundCommitmentCall(params: {
-  payrollAddress: string;
-  runId: bigint;
-  commitmentHash: bigint;
-  token: string;
-  amount: bigint;
-  runOwnerSecret: bigint;
-}) {
-  return {
-    contractAddress: params.payrollAddress,
-    calldata: [
-      num.toHex(PAYROLL_OPERATION_FUND_COMMITMENT),
-      num.toHex(params.runId),
-      num.toHex(params.commitmentHash),
-      num.toHex(params.token),
-      num.toHex(params.amount), // u128 fits in a single felt (Cairo Serde: 1 felt, unlike u256's 2)
-      num.toHex(0), // expected_count — unused for FundCommitment
-      num.toHex(params.runOwnerSecret), // proves the caller opened this run
-      num.toHex(0), // note_id — unused for FundCommitment
-    ],
-  };
-}
-
-// Requires real Sepolia credentials — see task-4-report.md for exactly what
-// is missing in this environment (funded Sepolia account, a hosted Sepolia
-// proving-service URL, a deployed Sepolia STRK20 pool address, a deployed
-// Sepolia Payroll contract address with an already-opened run, and the
-// Sepolia STRK token address). None of those were available here, so this
-// test could not be executed against live infrastructure; it is real,
-// correctly-typed code wired via `getTransfers`, not a fake.
+// Requires real Sepolia credentials — a funded Sepolia account, a hosted
+// Sepolia proving-service URL, a deployed Sepolia STRK20 pool address, a
+// deployed Sepolia Payroll contract address with an already-opened run, and
+// the Sepolia STRK token address. None of those were available in the
+// environment that first wrote this file; it is real, correctly-typed code
+// wired via `getTransfers`, not a fake.
 //
 // `SEPOLIA_RUN_ID` must reference a run already opened on the deployed
-// Payroll contract (via a separate `PayrollOperation::OpenRun` privacy_invoke
-// — out of scope for this task, which only funds a commitment against an
-// existing run). Since docs/adr-run-ownership.md, that OpenRun call fixes an
-// owner_secret this run must be funded with; `SEPOLIA_RUN_OWNER_SECRET` must
-// hold that same value.
+// Payroll contract (via a separate `PayrollOperation::OpenRun` privacy_invoke).
+// Since docs/adr-run-ownership.md, that OpenRun call fixes an owner_secret
+// this run must be funded with; `SEPOLIA_RUN_OWNER_SECRET` must hold that
+// same value.
+//
+// FundCommitment does not transferFrom. Claim later approves the pool to pull
+// tokens FROM Payroll into an open note, so this test withdraws the deposited
+// amount to the Payroll address in the same private tx as the invoke. Without
+// that withdraw, Payroll holds nothing and Claim cannot settle.
 describe("fund a payroll run", () => {
-  it("deposits into the pool and routes to the Payroll contract via InvokeExternal", async () => {
-    // starknet.js 10.x's `Account` constructor takes a single options object
-    // (verified against starknet@10.5.0's shipped .d.ts) — the older
-    // positional-args constructor no longer exists in this major version.
+  it("deposits into the pool, parks tokens in Payroll, and records the commitment", async () => {
     const account = new Account({
       provider: SEPOLIA_RPC_PROVIDER,
       address: requireEnv("TEST_ACCOUNT_ADDRESS"),
@@ -82,15 +39,14 @@ describe("fund a payroll run", () => {
     const commitmentHash = computeCommitmentHash(secret);
     const amount = 100n;
 
-    // `PrivateTransfersInterface.execute()` (sdk/src/interfaces.ts) only
-    // compiles and proves the actions — it returns
-    // `{ callAndProof, registry, warnings }`, NOT a submitted-transaction
-    // receipt. There is no `result.receipt` on the real type. Submitting
-    // requires a separate outside-execution step, exactly as StarkWare's own
-    // e2e/tests/integration/privacy-starknet-integration.test.ts does.
     const { callAndProof } = await transfers
       .build({ autoDiscover: { notes: "refresh", channels: "refresh" } })
-      .with(SEPOLIA_CONFIG.strkAddress, (t: TokenOperationsBuilder) => t.deposit({ amount }))
+      .with(SEPOLIA_CONFIG.strkAddress, (t: TokenOperationsBuilder) =>
+        t.deposit({ amount }).withdraw({
+          recipient: SEPOLIA_CONFIG.payrollAddress,
+          amount,
+        }),
+      )
       .invoke((_args: InvokeCalldataBuilderArgs) =>
         buildFundCommitmentCall({
           payrollAddress: SEPOLIA_CONFIG.payrollAddress,
@@ -104,42 +60,11 @@ describe("fund a payroll run", () => {
       .surplusTo(account.address)
       .execute();
 
-    // Self-relay: the funder submits its own pre-signed outside-execution
-    // call (no separate admin/relayer account is required for this to
-    // work — `caller` is just set to the funder's own address).
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    const callOptions: OutsideExecutionOptions = {
-      caller: account.address,
-      execute_after: nowSeconds - 3600,
-      execute_before: nowSeconds + 3600,
-    };
-    const outsideTransaction = await account.getOutsideTransaction(
-      callOptions,
-      callAndProof.call,
-      OutsideExecutionVersion.V2,
-    );
-    const executeTx = await account.executeFromOutside(outsideTransaction, {
-      tip: 0n,
-      proofFacts: callAndProof.proof.proofFacts,
-      proof: callAndProof.proof.data,
-    });
-
-    const receipt = await SEPOLIA_RPC_PROVIDER.waitForTransaction(executeTx.transaction_hash);
+    const { txHash, receipt } = await submitPrivateCall(account, callAndProof);
     expect(receipt.isSuccess()).toBe(true);
 
-    // Step 5 (SDK README's "Sequencing after transparent state changes"):
-    // do not chain a follow-up private action onto this deposit until
-    // depositBlock is at least 10 blocks in the past. Task 5 must poll
-    // provider.getBlockNumber() until that holds before building on this
-    // deposit/commitment.
     console.log(
-      `fund-commitment tx=${executeTx.transaction_hash} run=${runId} commitment=${commitmentHash} pool=${SEPOLIA_CONFIG.poolAddress} payroll=${SEPOLIA_CONFIG.payrollAddress}`,
+      `fund-commitment tx=${txHash} run=${runId} commitment=${commitmentHash} pool=${SEPOLIA_CONFIG.poolAddress} payroll=${SEPOLIA_CONFIG.payrollAddress}`,
     );
   }, 300_000);
 });
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
