@@ -25,8 +25,17 @@ import { hash, shortString } from "starknet";
  * COMMITMENT_NOT_FOUND. Use `shortString.encodeShortString`.
  */
 export const PAYROLL_COMMITMENT_TAG = "PAYROLL_COMMITMENT_TAG:V1";
+export const PAYROLL_RUN_ID_TAG = "PAYROLL_RUN_ID_TAG:V1";
+export const PAYROLL_RUN_OWNER_TAG = "PAYROLL_RUN_OWNER_TAG:V1";
 
 const PAYROLL_COMMITMENT_TAG_FELT = shortString.encodeShortString(PAYROLL_COMMITMENT_TAG);
+const PAYROLL_RUN_ID_TAG_FELT = shortString.encodeShortString(PAYROLL_RUN_ID_TAG);
+const PAYROLL_RUN_OWNER_TAG_FELT = shortString.encodeShortString(PAYROLL_RUN_OWNER_TAG);
+
+function poseidonTagged(tagFelt: string, secret: bigint | string): bigint {
+  const secretFelt = typeof secret === "string" ? shortString.encodeShortString(secret) : secret;
+  return BigInt(hash.computePoseidonHashOnElements([tagFelt, secretFelt]));
+}
 
 /**
  * @param secret Either an already-felt252 value (bigint — passed through
@@ -36,6 +45,20 @@ const PAYROLL_COMMITMENT_TAG_FELT = shortString.encodeShortString(PAYROLL_COMMIT
  *   literal encodes to.
  */
 export function computeCommitmentHash(secret: bigint | string): bigint {
-  const secretFelt = typeof secret === "string" ? shortString.encodeShortString(secret) : secret;
-  return BigInt(hash.computePoseidonHashOnElements([PAYROLL_COMMITMENT_TAG_FELT, secretFelt]));
+  return poseidonTagged(PAYROLL_COMMITMENT_TAG_FELT, secret);
+}
+
+/** Mirrors `compute_run_id` in payroll.cairo. OpenRun requires run_id to equal this. */
+export function computeRunId(ownerSecret: bigint | string): bigint {
+  return poseidonTagged(PAYROLL_RUN_ID_TAG_FELT, ownerSecret);
+}
+
+/**
+ * Mirrors `compute_run_owner_commitment` in payroll.cairo. Stored on RunInfo
+ * at OpenRun; every FundCommitment must reveal the same owner_secret.
+ * Uses a different domain tag from computeRunId so a public run_id cannot
+ * stand in for the owner commitment.
+ */
+export function computeRunOwnerCommitment(ownerSecret: bigint | string): bigint {
+  return poseidonTagged(PAYROLL_RUN_OWNER_TAG_FELT, ownerSecret);
 }
