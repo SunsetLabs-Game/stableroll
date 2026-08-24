@@ -1,6 +1,6 @@
 use payroll::payroll::{
     IPayrollDispatcher, IPayrollDispatcherTrait, PayrollOperation, RunInfo, compute_commitment_hash,
-    compute_run_id,
+    compute_run_id, compute_run_owner_commitment,
 };
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address, start_mock_call,
@@ -375,4 +375,24 @@ fn test_commitment_hash_matches_typescript() {
     let expected: felt252 =
         2916571549562949959572444329737062239145273904095529778681389446543678977274;
     assert(compute_commitment_hash('SECRET-A') == expected, 'TS/Cairo hash drift');
+}
+
+/// Same pairing as `test_commitment_hash_matches_typescript`, for the two
+/// run-ownership hashes. The TypeScript suite asserts the same OWNER-1
+/// literals in `integration/src/commitment-parity.test.ts`. Drift here makes
+/// OpenRun revert RUN_ID_MISMATCH or FundCommitment revert NOT_RUN_OWNER.
+#[test]
+fn test_run_id_hash_matches_typescript() {
+    let expected: felt252 =
+        1155664066368691955274112831219001117446171185908481296176988237071824193606;
+    assert(compute_run_id('OWNER-1') == expected, 'TS/Cairo run_id drift');
+}
+
+#[test]
+fn test_run_owner_commitment_hash_matches_typescript() {
+    let expected: felt252 =
+        1457531891617558283633604771381914416639085145906137038567439060842776331852;
+    assert(
+        compute_run_owner_commitment('OWNER-1') == expected, 'TS/Cairo owner hash drift',
+    );
 }
