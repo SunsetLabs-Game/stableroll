@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg width="650pt" height="792pt"
+ viewBox="0.00 0.00 650.00 792.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.922948 0.922948) rotate(0) translate(50.4 807.72)">
+<title>architecture</title>
+<text xml:space="preserve" text-anchor="start" x="166.25" y="-741.97" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="13.00" fill="#1e293b">StableRoll &#45; System Architecture</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-732.77" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">A company funds a payroll run once on Starknet · recipients claim on Starknet, EVM, or Solana · no on&#45;chain payer↔recipient link</text>
+<g id="clust1" class="cluster">
+<title>cluster_pool</title>
+<path fill="none" stroke="#9333ea" stroke-width="2.5" d="M172,-518.63C172,-518.63 402,-518.63 402,-518.63 408,-518.63 414,-524.63 414,-530.63 414,-530.63 414,-619.35 414,-619.35 414,-625.35 408,-631.35 402,-631.35 402,-631.35 172,-631.35 172,-631.35 166,-631.35 160,-625.35 160,-619.35 160,-619.35 160,-530.63 160,-530.63 160,-524.63 166,-518.63 172,-518.63"/>
+<text xml:space="preserve" text-anchor="start" x="225.75" y="-616.95" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#9333ea">STRK20 Privacy Pool</text>
+<text xml:space="preserve" text-anchor="start" x="168" y="-607.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Shielded notes · InvokeExternal is the only caller of Payroll</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_payroll</title>
+<path fill="none" stroke="#16a34a" stroke-width="2.5" d="M154,-140.72C154,-140.72 420,-140.72 420,-140.72 426,-140.72 432,-146.72 432,-152.72 432,-152.72 432,-476.38 432,-476.38 432,-482.38 426,-488.38 420,-488.38 420,-488.38 154,-488.38 154,-488.38 148,-488.38 142,-482.38 142,-476.38 142,-476.38 142,-152.72 142,-152.72 142,-146.72 148,-140.72 154,-140.72"/>
+<text xml:space="preserve" text-anchor="start" x="157.12" y="-473.98" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#16a34a">Payroll helper &#160;&#45; &#160;privacy_invoke</text>
+<text xml:space="preserve" text-anchor="start" x="150" y="-464.83" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Aggregate accounting · no payer address stored</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_claim</title>
+<path fill="none" stroke="#3b82f6" stroke-width="2.5" d="M20,-8C20,-8 584,-8 584,-8 590,-8 596,-14 596,-20 596,-20 596,-108.72 596,-108.72 596,-114.72 590,-120.72 584,-120.72 584,-120.72 20,-120.72 20,-120.72 14,-120.72 8,-114.72 8,-108.72 8,-108.72 8,-20 8,-20 8,-14 14,-8 20,-8"/>
+<text xml:space="preserve" text-anchor="start" x="83.88" y="-106.32" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#3b82f6">Claim legs</text>
+<text xml:space="preserve" text-anchor="start" x="16" y="-97.17" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Downstream of a Starknet Claim · never custody</text>
+</g>
+
+<g id="node1" class="node">
+<title>pool</title>
+<path fill="#faf5ff" stroke="#9333ea" stroke-width="2" d="M378.96,-584.35C378.96,-584.35 195.04,-584.35 195.04,-584.35 189.04,-584.35 183.04,-578.35 183.04,-572.35 183.04,-572.35 183.04,-548.63 183.04,-548.63 183.04,-542.63 189.04,-536.63 195.04,-536.63 195.04,-536.63 378.96,-536.63 378.96,-536.63 384.96,-536.63 390.96,-542.63 390.96,-548.63 390.96,-548.63 390.96,-572.35 390.96,-572.35 390.96,-578.35 384.96,-584.35 378.96,-584.35"/>
+<text xml:space="preserve" text-anchor="start" x="254" y="-565.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Privacy Pool</text>
+<text xml:space="preserve" text-anchor="start" x="239" y="-556.44" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Mainnet 0x0403…812a</text>
+<text xml:space="preserve" text-anchor="start" x="198.88" y="-547.44" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">InvokeExternal after a verified STARK proof</text>
+</g>
+
+<g id="node2" class="node">
+<title>openfund</title>
+<path fill="#f0fdf4" stroke="#16a34a" stroke-width="2.5" d="M369.59,-441.38C369.59,-441.38 204.41,-441.38 204.41,-441.38 198.41,-441.38 192.41,-435.38 192.41,-429.38 192.41,-429.38 192.41,-405.66 192.41,-405.66 192.41,-399.66 198.41,-393.66 204.41,-393.66 204.41,-393.66 369.59,-393.66 369.59,-393.66 375.59,-393.66 381.59,-399.66 381.59,-405.66 381.59,-405.66 381.59,-429.38 381.59,-429.38 381.59,-435.38 375.59,-441.38 369.59,-441.38"/>
+<text xml:space="preserve" text-anchor="start" x="210.5" y="-422.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">OpenRun / FundCommitment</text>
+<text xml:space="preserve" text-anchor="start" x="208.25" y="-413.47" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">privacy_invoke, called only by the pool</text>
+<text xml:space="preserve" text-anchor="start" x="213.88" y="-404.47" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">owner_secret proves run ownership</text>
+</g>
+
+<g id="edge2" class="edge">
+<title>pool&#45;&gt;openfund</title>
+<path fill="none" stroke="#059669" stroke-width="2" d="M287,-535.89C287,-513.43 287,-479.34 287,-453.67"/>
+<polygon fill="#059669" stroke="#059669" stroke-width="2" points="289.98,-453.72 287,-445.22 284.03,-453.72 289.98,-453.72"/>
+<text xml:space="preserve" text-anchor="middle" x="319.62" y="-498.13" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#059669">InvokeExternal</text>
+</g>
+
+<g id="node3" class="node">
+<title>runinfo</title>
+<path fill="#f0fdf4" stroke="#16a34a" stroke-width="1.6" d="M402.22,-334.66C402.22,-334.66 171.78,-334.66 171.78,-334.66 165.78,-334.66 159.78,-328.66 159.78,-322.66 159.78,-322.66 159.78,-298.94 159.78,-298.94 159.78,-292.94 165.78,-286.94 171.78,-286.94 171.78,-286.94 402.22,-286.94 402.22,-286.94 408.22,-286.94 414.22,-292.94 414.22,-298.94 414.22,-298.94 414.22,-322.66 414.22,-322.66 414.22,-328.66 408.22,-334.66 402.22,-334.66"/>
+<text xml:space="preserve" text-anchor="start" x="266" y="-315.85" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">RunInfo</text>
+<text xml:space="preserve" text-anchor="start" x="204.12" y="-306.75" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">expected_count · expected_total · closed</text>
+<text xml:space="preserve" text-anchor="start" x="175.62" y="-297.75" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">owner_commitment (secret&#45;proven) · no payer address</text>
+</g>
+
+<g id="edge3" class="edge">
+<title>openfund&#45;&gt;runinfo</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M287,-392.5C287,-378.7 287,-361.14 287,-345.93"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="289.98,-345.97 287,-337.47 284.03,-345.97 289.98,-345.97"/>
+</g>
+
+<g id="node4" class="node">
+<title>claimop</title>
+<path fill="#f0fdf4" stroke="#16a34a" stroke-width="2" d="M386.84,-206.44C386.84,-206.44 187.16,-206.44 187.16,-206.44 181.16,-206.44 175.16,-200.44 175.16,-194.44 175.16,-194.44 175.16,-170.72 175.16,-170.72 175.16,-164.72 181.16,-158.72 187.16,-158.72 187.16,-158.72 386.84,-158.72 386.84,-158.72 392.84,-158.72 398.84,-164.72 398.84,-170.72 398.84,-170.72 398.84,-194.44 398.84,-194.44 398.84,-200.44 392.84,-206.44 386.84,-206.44"/>
+<text xml:space="preserve" text-anchor="start" x="272" y="-187.63" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Claim</text>
+<text xml:space="preserve" text-anchor="start" x="204.5" y="-178.53" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Recipient reveals the commitment secret</text>
+<text xml:space="preserve" text-anchor="start" x="191" y="-169.53" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Hash is recomputed on&#45;chain · never passed in</text>
+</g>
+
+<g id="edge4" class="edge">
+<title>runinfo&#45;&gt;claimop</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M287,-286.35C287,-267.08 287,-239.51 287,-217.78"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="289.98,-217.95 287,-209.45 284.03,-217.95 289.98,-217.95"/>
+<text xml:space="preserve" text-anchor="middle" x="329" y="-248.44" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">recipient holds</text>
+<text xml:space="preserve" text-anchor="middle" x="329" y="-237.19" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">commitment secret</text>
+</g>
+
+<g id="node5" class="node">
+<title>starknet</title>
+<path fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" d="M167.97,-69.22C167.97,-69.22 38.03,-69.22 38.03,-69.22 32.03,-69.22 26.03,-63.22 26.03,-57.22 26.03,-57.22 26.03,-42.5 26.03,-42.5 26.03,-36.5 32.03,-30.5 38.03,-30.5 38.03,-30.5 167.97,-30.5 167.97,-30.5 173.97,-30.5 179.97,-36.5 179.97,-42.5 179.97,-42.5 179.97,-57.22 179.97,-57.22 179.97,-63.22 173.97,-69.22 167.97,-69.22"/>
+<text xml:space="preserve" text-anchor="start" x="64.38" y="-50.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Starknet wallet</text>
+<text xml:space="preserve" text-anchor="start" x="41.88" y="-41.31" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Pool payout into an open note</text>
+</g>
+
+<g id="edge5" class="edge">
+<title>claimop&#45;&gt;starknet</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M253.04,-157.99C236.93,-146.75 217.44,-133.1 200,-120.72 179.25,-105.99 156.14,-89.35 137.67,-76.01"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="139.63,-73.75 131,-71.18 136.14,-78.57 139.63,-73.75"/>
+</g>
+
+<g id="node6" class="node">
+<title>evm</title>
+<path fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" d="M342.22,-73.72C342.22,-73.72 231.78,-73.72 231.78,-73.72 225.78,-73.72 219.78,-67.72 219.78,-61.72 219.78,-61.72 219.78,-38 219.78,-38 219.78,-32 225.78,-26 231.78,-26 231.78,-26 342.22,-26 342.22,-26 348.22,-26 354.22,-32 354.22,-38 354.22,-38 354.22,-61.72 354.22,-61.72 354.22,-67.72 348.22,-73.72 342.22,-73.72"/>
+<text xml:space="preserve" text-anchor="start" x="258.5" y="-54.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">EVM wallet</text>
+<text xml:space="preserve" text-anchor="start" x="239.75" y="-45.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">privacy&#45;bridge cashOut</text>
+<text xml:space="preserve" text-anchor="start" x="235.62" y="-36.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Wired · not live&#45;exercised</text>
+</g>
+
+<g id="edge6" class="edge">
+<title>claimop&#45;&gt;evm</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M287,-157.91C287,-137.46 287,-107.66 287,-84.69"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="289.98,-84.98 287,-76.48 284.03,-84.98 289.98,-84.98"/>
+</g>
+
+<g id="node7" class="node">
+<title>solana</title>
+<path fill="#fffbeb" stroke="#d97706" stroke-width="1.6" d="M565.97,-73.72C565.97,-73.72 406.03,-73.72 406.03,-73.72 400.03,-73.72 394.03,-67.72 394.03,-61.72 394.03,-61.72 394.03,-38 394.03,-38 394.03,-32 400.03,-26 406.03,-26 406.03,-26 565.97,-26 565.97,-26 571.97,-26 577.97,-32 577.97,-38 577.97,-38 577.97,-61.72 577.97,-61.72 577.97,-67.72 571.97,-73.72 565.97,-73.72"/>
+<text xml:space="preserve" text-anchor="start" x="451.5" y="-54.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Solana wallet</text>
+<text xml:space="preserve" text-anchor="start" x="421.88" y="-45.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">NEAR Intents 1&#45;Click connector</text>
+<text xml:space="preserve" text-anchor="start" x="409.88" y="-36.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Live&#45;quoted · e2e claim not exercised</text>
+</g>
+
+<g id="edge7" class="edge">
+<title>claimop&#45;&gt;solana</title>
+<path fill="none" stroke="#d97706" stroke-width="1.4" d="M323.04,-157.91C356.29,-136.07 405.76,-103.57 441.47,-80.11"/>
+<polygon fill="#d97706" stroke="#d97706" stroke-width="1.4" points="442.99,-82.67 448.46,-75.52 439.72,-77.7 442.99,-82.67"/>
+</g>
+
+<g id="node8" class="node">
+<title>payer</title>
+<path fill="#f0f9ff" stroke="#0284c7" stroke-width="2" d="M371.47,-727.32C371.47,-727.32 202.53,-727.32 202.53,-727.32 196.53,-727.32 190.53,-721.32 190.53,-715.32 190.53,-715.32 190.53,-691.6 190.53,-691.6 190.53,-685.6 196.53,-679.6 202.53,-679.6 202.53,-679.6 371.47,-679.6 371.47,-679.6 377.47,-679.6 383.47,-685.6 383.47,-691.6 383.47,-691.6 383.47,-715.32 383.47,-715.32 383.47,-721.32 377.47,-727.32 371.47,-727.32"/>
+<text xml:space="preserve" text-anchor="start" x="272" y="-708.51" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Payer</text>
+<text xml:space="preserve" text-anchor="start" x="227.38" y="-699.41" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Holds owner_secret off&#45;chain</text>
+<text xml:space="preserve" text-anchor="start" x="206.38" y="-690.41" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Opens the run · funds each commitment</text>
+</g>
+
+<g id="edge1" class="edge">
+<title>payer&#45;&gt;pool</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M287,-678.86C287,-656.1 287,-621.38 287,-595.6"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="289.98,-595.78 287,-587.28 284.03,-595.78 289.98,-595.78"/>
+<text xml:space="preserve" text-anchor="middle" x="318.88" y="-641.1" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">fund (shielded)</text>
+</g>
+</g>
+</svg>

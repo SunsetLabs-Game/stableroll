@@ -15,6 +15,10 @@ dist/
 build/
 .next/
 
+# Remotion intermediates. The rendered demo.mp4 is committed (6.4 MB).
+media/demo/out/*
+!media/demo/out/demo.mp4
+
 # environment / secrets
 .env
 .env.local
