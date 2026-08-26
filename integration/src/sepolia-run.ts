@@ -1,6 +1,11 @@
 import { randomBytes } from "node:crypto";
 import { Account } from "starknet";
 import type { InvokeCalldataBuilderArgs, TokenOperationsBuilder } from "@starkware-libs/starknet-privacy-sdk";
+import { deriveRecipientKeyPair } from "payroll-notify/topics.js";
+import {
+  createNotificationNode,
+  sendClaimNotification,
+} from "payroll-notify/send-claim-notification.js";
 import { SEPOLIA_CONFIG, getTransfers } from "./config.js";
 import { computeCommitmentHash, computeRunId } from "./commitment.js";
 import { buildFundCommitmentCall, buildOpenRunCall } from "./payroll-invoke.js";
@@ -83,6 +88,24 @@ export async function openAndFundSingleCommitment(params: {
     .execute();
   const fundSubmit = await submitPrivateCall(params.payer, funded.callAndProof);
   await waitForMaturity(receiptBlockNumber(fundSubmit.receipt));
+
+  // Recipient Waku identity is derived from the same commitment secret that
+  // produced commitmentHash (notify/src/topics.ts). No separate key exchange.
+  // Failures are not swallowed: a successful FundCommitment that never
+  // notifies is the product bug this wiring exists to close.
+  const { publicKey } = deriveRecipientKeyPair(params.commitmentSecret);
+  const node = await createNotificationNode();
+  try {
+    await sendClaimNotification(node, publicKey, {
+      runId: runId.toString(),
+      commitmentHash: commitmentHash.toString(),
+      secret: params.commitmentSecret.toString(),
+      token,
+      amount: params.amount.toString(),
+    });
+  } finally {
+    await node.stop();
+  }
 
   return {
     runId,

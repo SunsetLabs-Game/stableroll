@@ -10,6 +10,9 @@
     "test:liquidity": "vitest run near-intents-liquidity"
   },
   "dependencies": {
+    "@waku/message-encryption": "0.0.38",
+    "@waku/sdk": "0.0.36",
+    "payroll-notify": "file:../notify",
     "starknet": "^10.4.0"
   },
   "devDependencies": {
