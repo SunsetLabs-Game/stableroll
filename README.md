@@ -60,17 +60,13 @@ tracker, not this README, as the up-to-date source of truth on scope.
 
 ## Architecture
 
-```
-Payer ──fund──▶ STRK20 Privacy Pool ──InvokeExternal──▶ Payroll.privacy_invoke (OpenRun / FundCommitment)
-                                                                   │
-                                                     RunInfo (aggregate accounting, no payer address)
-                                                                   │
-Recipient ──claim (reveals commitment secret)──▶ Payroll.privacy_invoke (Claim) ──▶ payout leg
-                                                                                        │
-                                              ┌─────────────────────────┬─────────────┴───────────────┐
-                                        Starknet wallet            EVM wallet                   Solana wallet
-                                       (pool payout, live)    (privacy-bridge, planned)   (NEAR Intents, planned)
-```
+![Architecture](diagrams/out/architecture.svg)
+
+Generated from `diagrams/definitions/`, not drawn by hand. The ASCII diagram
+this replaced had already drifted (it omitted run ownership and still labelled
+the EVM and Solana legs "planned"). Do not edit the SVG; change the typed
+spec and run `npm run generate` in `diagrams/`. The run state machine and
+claim-routing tree live in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 - **`contracts/payroll`** — the only component that ever touches recipient
   funds. Called exclusively by the privacy pool's `InvokeExternal`; see
@@ -130,6 +126,22 @@ npm install
 npm run test:offline   # deterministic derivation tests, no network
 npm test               # full suite — talks to the live Waku test fleet, no credentials needed
 ```
+
+### Diagrams: regenerate the committed SVGs
+
+Requires [Graphviz](https://graphviz.org) (`dot` on `PATH`). It is a local
+and CI dependency, not pinned in `.tool-versions`.
+
+```bash
+brew install graphviz          # macOS
+# apt-get install graphviz     # Debian/Ubuntu
+cd diagrams
+npm ci
+npm run generate               # writes diagrams/out/<name>.{dot,svg}
+```
+
+CI fails the PR if a typed spec changed without regenerating the committed
+`.dot` files. See [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ### TypeScript — full suite (needs a GitHub Packages token)
 
