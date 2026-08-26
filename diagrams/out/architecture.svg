@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg width="440pt" height="542pt"
+ viewBox="0.00 0.00 440.00 542.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 537.5)">
+<title>architecture</title>
+<polygon fill="white" stroke="none" points="-4,4 -4,-537.5 436,-537.5 436,4 -4,4"/>
+
+<g id="node1" class="node">
+<title>payer</title>
+<polygon fill="none" stroke="black" points="216.88,-533.5 162.88,-533.5 162.88,-497.5 216.88,-497.5 216.88,-533.5"/>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-510.45" font-family="Times,serif" font-size="14.00">Payer</text>
+</g>
+
+<g id="node2" class="node">
+<title>pool</title>
+<polygon fill="none" stroke="black" points="258.62,-445 121.12,-445 121.12,-409 258.62,-409 258.62,-445"/>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-421.95" font-family="Times,serif" font-size="14.00">STRK20 Privacy Pool</text>
+</g>
+
+<g id="edge1" class="edge">
+<title>payer&#45;&gt;pool</title>
+<path fill="none" stroke="black" d="M189.88,-497.41C189.88,-485.76 189.88,-470.05 189.88,-456.52"/>
+<polygon fill="black" stroke="black" points="193.38,-456.86 189.88,-446.86 186.38,-456.86 193.38,-456.86"/>
+<text xml:space="preserve" text-anchor="middle" x="202.25" y="-466.2" font-family="Times,serif" font-size="14.00">fund</text>
+</g>
+
+<g id="node3" class="node">
+<title>payroll</title>
+<polygon fill="none" stroke="black" points="280,-356.5 99.75,-356.5 99.75,-315.5 280,-315.5 280,-356.5"/>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-339.2" font-family="Times,serif" font-size="14.00">Payroll.privacy_invoke</text>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-322.7" font-family="Times,serif" font-size="14.00">OpenRun / FundCommitment</text>
+</g>
+
+<g id="edge2" class="edge">
+<title>pool&#45;&gt;payroll</title>
+<path fill="none" stroke="black" d="M189.88,-408.84C189.88,-397.35 189.88,-381.9 189.88,-368.27"/>
+<polygon fill="black" stroke="black" points="193.38,-368.42 189.88,-358.42 186.38,-368.42 193.38,-368.42"/>
+<text xml:space="preserve" text-anchor="middle" x="231.5" y="-377.7" font-family="Times,serif" font-size="14.00">InvokeExternal</text>
+</g>
+
+<g id="node4" class="node">
+<title>runinfo</title>
+<polygon fill="none" stroke="black" points="290.5,-278.5 83.25,-278.5 83.25,-204.5 296.5,-204.5 296.5,-272.5 290.5,-278.5"/>
+<polyline fill="none" stroke="black" points="290.5,-278.5 290.5,-272.5"/>
+<polyline fill="none" stroke="black" points="296.5,-272.5 290.5,-272.5"/>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-261.2" font-family="Times,serif" font-size="14.00">RunInfo</text>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-244.7" font-family="Times,serif" font-size="14.00">aggregate accounting</text>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-228.2" font-family="Times,serif" font-size="14.00">no payer address</text>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-211.7" font-family="Times,serif" font-size="14.00">owner_commitment (secret&#45;proven)</text>
+</g>
+
+<g id="edge3" class="edge">
+<title>payroll&#45;&gt;runinfo</title>
+<path fill="none" stroke="black" d="M189.88,-315.38C189.88,-307.93 189.88,-299.07 189.88,-290.14"/>
+<polygon fill="black" stroke="black" points="193.38,-290.41 189.88,-280.41 186.38,-290.41 193.38,-290.41"/>
+</g>
+
+<g id="node5" class="node">
+<title>claim</title>
+<polygon fill="none" stroke="black" points="261.25,-135.5 118.5,-135.5 118.5,-94.5 261.25,-94.5 261.25,-135.5"/>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-118.2" font-family="Times,serif" font-size="14.00">Payroll.privacy_invoke</text>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-101.7" font-family="Times,serif" font-size="14.00">Claim</text>
+</g>
+
+<g id="edge4" class="edge">
+<title>runinfo&#45;&gt;claim</title>
+<path fill="none" stroke="black" d="M189.88,-204.15C189.88,-186.16 189.88,-164.66 189.88,-147.39"/>
+<polygon fill="black" stroke="black" points="193.38,-147.46 189.88,-137.46 186.38,-147.46 193.38,-147.46"/>
+<text xml:space="preserve" text-anchor="middle" x="242.75" y="-173.2" font-family="Times,serif" font-size="14.00">recipient reveals</text>
+<text xml:space="preserve" text-anchor="middle" x="242.75" y="-156.7" font-family="Times,serif" font-size="14.00">commitment secret</text>
+</g>
+
+<g id="node6" class="node">
+<title>starknet</title>
+<polygon fill="none" stroke="black" points="97.75,-49.25 0,-49.25 0,-8.25 97.75,-8.25 97.75,-49.25"/>
+<text xml:space="preserve" text-anchor="middle" x="48.88" y="-31.95" font-family="Times,serif" font-size="14.00">Starknet wallet</text>
+<text xml:space="preserve" text-anchor="middle" x="48.88" y="-15.45" font-family="Times,serif" font-size="14.00">pool payout</text>
+</g>
+
+<g id="edge5" class="edge">
+<title>claim&#45;&gt;starknet</title>
+<path fill="none" stroke="black" d="M156.46,-94.03C137.14,-82.49 112.64,-67.85 91.89,-55.45"/>
+<polygon fill="black" stroke="black" points="93.73,-52.47 83.35,-50.35 90.14,-58.48 93.73,-52.47"/>
+</g>
+
+<g id="node7" class="node">
+<title>evm</title>
+<polygon fill="none" stroke="black" points="263.5,-57.5 116.25,-57.5 116.25,0 263.5,0 263.5,-57.5"/>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-40.2" font-family="Times,serif" font-size="14.00">EVM wallet</text>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-23.7" font-family="Times,serif" font-size="14.00">privacy&#45;bridge cashOut</text>
+<text xml:space="preserve" text-anchor="middle" x="189.88" y="-7.2" font-family="Times,serif" font-size="14.00">wired not live&#45;exercised</text>
+</g>
+
+<g id="edge6" class="edge">
+<title>claim&#45;&gt;evm</title>
+<path fill="none" stroke="black" d="M189.88,-94.03C189.88,-86.61 189.88,-77.9 189.88,-69.33"/>
+<polygon fill="black" stroke="black" points="193.38,-69.37 189.88,-59.37 186.38,-69.37 193.38,-69.37"/>
+</g>
+
+<g id="node8" class="node">
+<title>solana</title>
+<polygon fill="none" stroke="black" points="432,-57.5 281.75,-57.5 281.75,0 432,0 432,-57.5"/>
+<text xml:space="preserve" text-anchor="middle" x="356.88" y="-40.2" font-family="Times,serif" font-size="14.00">Solana wallet</text>
+<text xml:space="preserve" text-anchor="middle" x="356.88" y="-23.7" font-family="Times,serif" font-size="14.00">NEAR Intents connector</text>
+<text xml:space="preserve" text-anchor="middle" x="356.88" y="-7.2" font-family="Times,serif" font-size="14.00">e2e claim not exercised</text>
+</g>
+
+<g id="edge7" class="edge">
+<title>claim&#45;&gt;solana</title>
+<path fill="none" stroke="black" d="M229.45,-94.03C247.85,-84.75 270.23,-73.46 291.07,-62.95"/>
+<polygon fill="black" stroke="black" points="292.45,-66.17 299.8,-58.54 289.3,-59.92 292.45,-66.17"/>
+</g>
+</g>
+</svg>

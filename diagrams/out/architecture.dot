@@ -1,0 +1,21 @@
+digraph "architecture" {
+  rankdir="TB";
+  fontname="Times-Roman";
+  fontsize="12";
+  bgcolor="white";
+  payer [label="Payer", shape="box"];
+  pool [label="STRK20 Privacy Pool", shape="box"];
+  payroll [label="Payroll.privacy_invoke\nOpenRun / FundCommitment", shape="box"];
+  runinfo [label="RunInfo\naggregate accounting\nno payer address\nowner_commitment (secret-proven)", shape="note"];
+  claim [label="Payroll.privacy_invoke\nClaim", shape="box"];
+  starknet [label="Starknet wallet\npool payout", shape="box"];
+  evm [label="EVM wallet\nprivacy-bridge cashOut\nwired not live-exercised", shape="box"];
+  solana [label="Solana wallet\nNEAR Intents connector\ne2e claim not exercised", shape="box"];
+  payer -> pool [label="fund"];
+  pool -> payroll [label="InvokeExternal"];
+  payroll -> runinfo;
+  runinfo -> claim [label="recipient reveals\ncommitment secret"];
+  claim -> starknet;
+  claim -> evm;
+  claim -> solana;
+}

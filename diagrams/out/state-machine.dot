@@ -1,0 +1,22 @@
+digraph "state-machine" {
+  rankdir="TB";
+  fontname="Times-Roman";
+  fontsize="11";
+  bgcolor="white";
+  open [label="OpenRun\nfixes expected_count\nand expected_total\n(reject either = 0)", shape="box"];
+  fund [label="FundCommitment*", shape="box"];
+  last [label="last fund:\nfunded_count == expected_count\nAND total_committed == expected_total?", shape="diamond"];
+  closed [label="closed = true", shape="box"];
+  under [label="UNDER_COMMITTED", shape="box"];
+  omit [label="omitted recipient\nclosed stays false\nis_complete never true", shape="box"];
+  claim [label="Claim*\nsecret preimage\nrecomputes commitment hash", shape="box"];
+  complete [label="is_complete\nclosed AND paid_count == expected_count\nAND total_paid == total_committed", shape="box"];
+  open -> fund;
+  fund -> fund [label="more slots remain"];
+  fund -> last [label="attempt final slot"];
+  last -> closed [label="totals match"];
+  last -> under [label="short the last"];
+  fund -> omit [label="never fund a promised recipient"];
+  closed -> claim;
+  claim -> complete [label="every funded commitment claimed"];
+}

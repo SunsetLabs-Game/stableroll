@@ -1,0 +1,23 @@
+digraph "claim-routing" {
+  rankdir="TB";
+  fontname="Times-Roman";
+  fontsize="11";
+  bgcolor="white";
+  dest [label="Claim destination chain", shape="diamond"];
+  starknet [label="Starknet\npool payout", shape="box"];
+  evm [label="EVM\nprivacy-bridge cashOut", shape="box"];
+  ethereum [label="Ethereum\nmainnet 1 / Sepolia 11155111", shape="box"];
+  optimism [label="Optimism\nmainnet 10 / OP Sepolia 11155420", shape="box"];
+  arbitrum [label="Arbitrum One\nmainnet 42161 / Arbitrum Sepolia 421614", shape="box"];
+  base [label="Base\nmainnet 8453 / Base Sepolia 84532", shape="box"];
+  polygon [label="Polygon\nmainnet 137 / Polygon Amoy 80002", shape="box"];
+  solana [label="Solana\nNEAR Intents connector implemented\ne2e claim not exercised\n(no testnet; mainnet needs sign-off)", shape="box"];
+  dest -> starknet;
+  dest -> evm;
+  dest -> solana;
+  evm -> ethereum;
+  evm -> optimism;
+  evm -> arbitrum;
+  evm -> base;
+  evm -> polygon;
+}
