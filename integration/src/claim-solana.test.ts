@@ -2,13 +2,11 @@ import { describe, it, expect } from "vitest";
 import { Account, OutsideExecutionVersion, num, type OutsideExecutionOptions } from "starknet";
 import type { InvokeCalldataBuilderArgs } from "@starkware-libs/starknet-privacy-sdk";
 import { SEPOLIA_CONFIG, SEPOLIA_RPC_PROVIDER, getTransfers } from "./config.js";
-import {
-  submitSolanaClaim,
-  verifyLiquidity,
-  queryTokens,
-  STARKNET_STRK_ASSET_ID,
-  SOLANA_USDC_ASSET_ID,
-} from "./near-intents-connector.js";
+// The liquidity / asset-id checks that used to live here moved to
+// `near-intents-liquidity.test.ts`, which imports only the SDK-free connector
+// so it can actually run without a GitHub Packages token — this file cannot,
+// because `./config.js` pulls in the privacy SDK at module scope.
+import { submitSolanaClaim } from "./near-intents-connector.js";
 
 // PayrollOperation::Claim discriminant — see claim-evm.test.ts for the full
 // enum layout explanation.
@@ -81,33 +79,32 @@ function buildClaimCall(params: {
 // ---------------------------------------------------------------------------
 
 describe("claim a payroll commitment and bridge it out to Solana via NEAR Intents", () => {
-  it("verifies that STRK→Solana USDC liquidity is live on NEAR Intents", async () => {
-    // This sub-test runs without any Starknet credentials — it only hits the
-    // public 1-Click API to confirm the route exists, satisfying the issue's
-    // acceptance criterion: "STRK/USDC liquidity to Solana is confirmed live
-    // at implementation time, not assumed from the design doc."
-    const tokens = await queryTokens();
-
-    const strkToken = tokens.find((t) => t.assetId === STARKNET_STRK_ASSET_ID);
-    expect(strkToken, "Starknet STRK should be listed in /v0/tokens").toBeDefined();
-    expect(strkToken!.blockchain).toBe("starknet");
-    expect(strkToken!.decimals).toBe(18);
-
-    const solUsdcToken = tokens.find((t) => t.assetId === SOLANA_USDC_ASSET_ID);
-    expect(solUsdcToken, "Solana USDC should be listed in /v0/tokens").toBeDefined();
-    expect(solUsdcToken!.blockchain).toBe("sol");
-    expect(solUsdcToken!.decimals).toBe(6);
-
-    // Dry-run quote to verify the route is live.
-    const quote = await verifyLiquidity();
-    expect(quote.quote.amountOut).toBeTruthy();
-    expect(Number(quote.quote.amountOut)).toBeGreaterThan(0);
-    console.log(
-      `Liquidity verified: 1 STRK → ${quote.quote.amountOutFormatted} USDC on Solana ($${quote.quote.amountOutUsd})`,
-    );
-  }, 30_000);
-
-  it("claims into a private note, then bridges to a Solana address with no payer-linking data", async () => {
+  // SKIPPED DELIBERATELY — this test cannot pass as written, and the reason is
+  // structural, not a bug to paper over:
+  //
+  //  1. Network mismatch. The claim leg below runs on Sepolia
+  //     (SEPOLIA_RPC_PROVIDER / SEPOLIA_CONFIG), but NEAR Intents is
+  //     mainnet-only — it has no testnet or devnet at all (see this file's
+  //     connector header and docs/solana-claim-coverage.md). A Sepolia claim
+  //     can never fund a mainnet 1-Click deposit address.
+  //
+  //  2. The deposit step is missing. Nothing here ever transfers funds to the
+  //     `depositAddress` the quote returns. `submitSolanaClaim` is handed the
+  //     *claim* tx hash, but the connector's own doc comment states that
+  //     `starknetTxHash` must be the hash of the deposit transaction, not the
+  //     privacy-pool claim. Since PENDING_DEPOSIT is not terminal, `pollStatus`
+  //     would poll for its full 10-minute budget and then throw.
+  //
+  // Running it therefore needs real mainnet STRK, which CLAUDE.md §4 rule 3
+  // gates behind explicit per-transaction human confirmation. Until that
+  // happens, the automated evidence that this leg works is
+  // `near-intents-liquidity.test.ts`, which verifies the pinned asset IDs and
+  // gets a live quote for the STRK->Solana USDC route without credentials.
+  //
+  // To run this once mainnet funds and sign-off are available: point the
+  // Starknet config at mainnet, add the deposit transfer to `depositAddress`
+  // between steps 1 and 2, and change `it.skip` back to `it`.
+  it.skip("claims into a private note, then bridges to a Solana address with no payer-linking data", async () => {
     const account = new Account({
       provider: SEPOLIA_RPC_PROVIDER,
       address: requireEnv("TEST_ACCOUNT_ADDRESS"),

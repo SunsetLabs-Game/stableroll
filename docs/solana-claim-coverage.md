@@ -73,9 +73,26 @@ Queried from `GET /v0/tokens` on **2026-08-23**:
 ## Liquidity verification
 
 The STRK→Solana USDC route was confirmed live via a dry-run quote on
-**2026-08-23**. The integration test `claim-solana.test.ts` includes a
-sub-test that re-verifies this at runtime by hitting the live 1-Click API
-(no credentials required for a dry-run quote).
+**2026-08-23** and re-verified on **2026-08-25** (25 STRK -> 0.6323 USDC).
+
+`integration/src/near-intents-liquidity.test.ts` re-checks this at runtime
+against the live 1-Click API. Run it with `npm run test:liquidity`. It needs
+no credentials, only public internet, so it deliberately imports **only**
+`near-intents-connector.ts` — that module is SDK-free, whereas
+`claim-solana.test.ts` imports `config.ts` and therefore cannot load at all
+without a GitHub Packages token.
+
+Two details of the dry-run call are load-bearing, and both were found by
+running it against the real API rather than by reading the spec:
+
+- The recipient must be an Ed25519 pubkey the API actually accepts. The
+  obvious-looking system-program address `11111111111111111111111111111111`
+  is rejected with `400 recipient is not valid`; the incinerator address
+  `1nc1nerator11111111111111111111111111111111` is accepted.
+- The API enforces a minimum notional per swap that tracks the STRK price.
+  At 10 STRK the call sat on that boundary and failed intermittently with
+  `amount is too low for bridge, try at least 10255031098236391937`, so the
+  dry run quotes 25 STRK for headroom. `dry: true` never moves funds.
 
 USDC on Solana (`EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`) has deep
 liquidity on Jupiter and other Solana DEXes. The solver network sources

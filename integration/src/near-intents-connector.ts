@@ -168,6 +168,15 @@ export const SOLANA_USDC_ASSET_ID =
  *  Queried from GET /v0/tokens on 2026-08-23. */
 export const SOLANA_SOL_ASSET_ID = "nep141:sol.omft.near";
 
+/**
+ * Dry-run parameters for `verifyLiquidity`. Both values are load-bearing and
+ * were fixed against the live API — see the comments at the call site.
+ */
+const DRY_RUN_AMOUNT_STRK = "25000000000000000000";
+const DRY_RUN_AMOUNT_STRK_LABEL = "25 STRK";
+export const DRY_RUN_PLACEHOLDER_RECIPIENT =
+  "1nc1nerator11111111111111111111111111111111";
+
 // Terminal statuses — polling stops when any of these is reached.
 const TERMINAL_STATUSES: ReadonlySet<SwapStatus> = new Set([
   "SUCCESS",
@@ -474,7 +483,12 @@ function sleep(ms: number): Promise<void> {
  * the issue requires us to verify.
  */
 export async function verifyLiquidity(): Promise<OneClickQuoteResponse> {
-  // Use a small representative amount that meets the minimum bridge requirements: 10 STRK (10^19 smallest units).
+  // 25 STRK. The 1-Click API enforces a minimum notional per swap that moves
+  // with the STRK price — quoting 10 STRK put us right on that boundary and the
+  // call failed intermittently with
+  // `amount is too low for bridge, try at least 10255031098236391937`.
+  // 25 STRK keeps ~2.5x headroom and costs nothing, since `dry: true` never
+  // moves funds.
   const quote = await requestQuote({
     dry: true,
     swapType: "EXACT_INPUT",
@@ -482,8 +496,13 @@ export async function verifyLiquidity(): Promise<OneClickQuoteResponse> {
     originAsset: STARKNET_STRK_ASSET_ID,
     depositType: "ORIGIN_CHAIN",
     destinationAsset: getDestinationAssetId(),
-    amount: "10000000000000000000", // 10 STRK
-    recipient: "11111111111111111111111111111111", // Solana system program — placeholder for dry run
+    amount: DRY_RUN_AMOUNT_STRK,
+    // The Solana incinerator (burn) address: a real, well-known, valid
+    // Ed25519 pubkey that belongs to nobody. The obvious-looking
+    // `11111111111111111111111111111111` (the system program) is REJECTED by
+    // the API with `400 recipient is not valid`, which silently broke this
+    // whole function — verified against the live API.
+    recipient: DRY_RUN_PLACEHOLDER_RECIPIENT,
     recipientType: "DESTINATION_CHAIN",
     refundTo: "0x0000000000000000000000000000000000000000000000000000000000000001",
     refundType: "ORIGIN_CHAIN",
@@ -492,7 +511,8 @@ export async function verifyLiquidity(): Promise<OneClickQuoteResponse> {
 
   console.log(
     `verifyLiquidity: STRK→Solana USDC route is live — ` +
-      `1 STRK ≈ ${quote.quote.amountOutFormatted} USDC ($${quote.quote.amountOutUsd})`,
+      `${DRY_RUN_AMOUNT_STRK_LABEL} ≈ ${quote.quote.amountOutFormatted} USDC ` +
+      `($${quote.quote.amountOutUsd})`,
   );
   return quote;
 }

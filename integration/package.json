@@ -6,7 +6,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "test:offline": "vitest run commitment-parity"
+    "test:offline": "vitest run commitment-parity",
+    "test:liquidity": "vitest run near-intents-liquidity"
   },
   "dependencies": {
     "starknet": "^10.4.0"
