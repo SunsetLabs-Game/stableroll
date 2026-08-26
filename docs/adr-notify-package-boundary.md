@@ -49,7 +49,13 @@ must reuse `deriveRecipientKeyPair`, not add a second derivation.
 The live Waku send is not in the required CI gate (same carve-out as
 `notify/`'s own fleet test): it depends on public P2P infrastructure this
 repo does not control, and the FundCommitment half needs Sepolia
-credentials. `npm run test:offline` is unchanged.
+credentials. `npm run test:offline` pins the payload shape via
+`claim-notification-payload.test.ts` (no network).
+
+`openAndFundSingleCommitment` starts the Waku node in parallel with
+OpenRun/FundCommitment so `waitForPeers` is not added to the critical
+path. Claim-path tests pass `notify: false` so they do not also depend
+on the live fleet; the dedicated notification test uses the default.
 
 `integration/` also pins `@waku/sdk` 0.0.36 and `@waku/message-encryption`
 0.0.38 (the same versions `notify/` already pins) so

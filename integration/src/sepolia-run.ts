@@ -6,6 +6,7 @@ import {
   createNotificationNode,
   sendClaimNotification,
 } from "payroll-notify/send-claim-notification.js";
+import { buildClaimNotificationPayload } from "./claim-notification-payload.js";
 import { SEPOLIA_CONFIG, getTransfers } from "./config.js";
 import { computeCommitmentHash, computeRunId } from "./commitment.js";
 import { buildFundCommitmentCall, buildOpenRunCall } from "./payroll-invoke.js";
@@ -36,18 +37,30 @@ export function asBool(value: unknown): boolean {
  * the pool to pull from Payroll into an open note.
  *
  * Waits the 10-block maturity window after each private tx.
+ *
+ * After a successful FundCommitment, sends a Waku claim notification unless
+ * `notify` is false. Claim-path tests pass `notify: false` so they do not
+ * also depend on the live Waku fleet; the dedicated notification test uses
+ * the default (true).
  */
 export async function openAndFundSingleCommitment(params: {
   payer: Account;
   amount: bigint;
   ownerSecret: bigint;
   commitmentSecret: bigint;
+  notify?: boolean;
 }) {
+  const sendNotification = params.notify !== false;
   const transfers = await getTransfers(params.payer);
   const runId = computeRunId(params.ownerSecret);
   const commitmentHash = computeCommitmentHash(params.commitmentSecret);
   const payrollAddress = SEPOLIA_CONFIG.payrollAddress;
   const token = SEPOLIA_CONFIG.strkAddress;
+
+  // Overlap Waku peer discovery with OpenRun + FundCommitment + the
+  // 10-block waits. createNotificationNode's waitForPeers is ~30s; doing
+  // it after fund would add that on the critical path for no reason.
+  const nodePromise = sendNotification ? createNotificationNode() : null;
 
   const opened = await transfers
     .build({ autoDiscover: { notes: "refresh", channels: "refresh" } })
@@ -89,22 +102,23 @@ export async function openAndFundSingleCommitment(params: {
   const fundSubmit = await submitPrivateCall(params.payer, funded.callAndProof);
   await waitForMaturity(receiptBlockNumber(fundSubmit.receipt));
 
-  // Recipient Waku identity is derived from the same commitment secret that
-  // produced commitmentHash (notify/src/topics.ts). No separate key exchange.
-  // Failures are not swallowed: a successful FundCommitment that never
-  // notifies is the product bug this wiring exists to close.
-  const { publicKey } = deriveRecipientKeyPair(params.commitmentSecret);
-  const node = await createNotificationNode();
-  try {
-    await sendClaimNotification(node, publicKey, {
-      runId: runId.toString(),
-      commitmentHash: commitmentHash.toString(),
-      secret: params.commitmentSecret.toString(),
+  let notified = false;
+  if (nodePromise) {
+    const { publicKey } = deriveRecipientKeyPair(params.commitmentSecret);
+    const payload = buildClaimNotificationPayload({
+      runId,
+      commitmentHash,
+      secret: params.commitmentSecret,
       token,
-      amount: params.amount.toString(),
+      amount: params.amount,
     });
-  } finally {
-    await node.stop();
+    const node = await nodePromise;
+    try {
+      await sendClaimNotification(node, publicKey, payload);
+      notified = true;
+    } finally {
+      await node.stop();
+    }
   }
 
   return {
@@ -112,5 +126,6 @@ export async function openAndFundSingleCommitment(params: {
     commitmentHash,
     openTx: openSubmit.txHash,
     fundTx: fundSubmit.txHash,
+    notified,
   };
 }

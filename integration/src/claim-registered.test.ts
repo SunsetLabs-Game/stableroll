@@ -55,6 +55,7 @@ describe("registered recipient claims a payroll commitment", () => {
       amount,
       ownerSecret,
       commitmentSecret,
+      notify: false,
     });
 
     const transfers = await getTransfers(recipient, {
