@@ -51,7 +51,7 @@ This repo is mid-build. Only claim the chains and legs that are real:
 | Starknet → Starknet fund + claim, via the pool | Done and tested locally. Not yet exercised against live Sepolia or mainnet infrastructure |
 | EVM claim leg (privacy-bridge) | Wired against the real API (`cashOut`, see `docs/evm-claim-coverage.md`). Not yet exercised against live testnet infrastructure |
 | Solana claim leg (NEAR Intents) | Connector implemented against the real 1-Click API (see `docs/solana-claim-coverage.md`). Route verified live — pinned asset IDs and a dry-run quote are re-checked by `npm run test:liquidity`. The end-to-end claim is **not** exercised: NEAR Intents has no testnet, so it needs mainnet funds and human sign-off |
-| Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`) — not yet wired to `FundCommitment` |
+| Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Wired from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`) |
 | Cavos payer/recipient UX | Planned — not implemented yet |
 | Mainnet eligibility transactions | Not yet recorded — `strk20.json`'s `transactions` array is currently empty |
 
@@ -81,8 +81,10 @@ Recipient ──claim (reveals commitment secret)──▶ Payroll.privacy_invok
   Payroll contract via the privacy SDK.
 - **`notify`** — Waku ECIES key/topic derivation and encrypted claim
   notifications, keyed off the same commitment secret as the on-chain claim,
-  never a Starknet address (see the package's `topics.ts`). Not yet called
-  from anywhere else in the repo.
+  never a Starknet address (see the package's `topics.ts`). Called from
+  `integration/src/sepolia-run.ts` after each successful `FundCommitment`.
+  `integration/` depends on it via `file:../notify` (see
+  `docs/adr-notify-package-boundary.md`).
 - **`integration/src/near-intents-connector.ts`** — the Solana claim leg:
   quote → deposit-notify → poll, against NEAR Intents' 1-Click API. It sits
   downstream of a Starknet claim and never touches custody or the
