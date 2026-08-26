@@ -1,82 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { Account, OutsideExecutionVersion, num, type OutsideExecutionOptions } from "starknet";
+import { Account, OutsideExecutionVersion, type OutsideExecutionOptions } from "starknet";
 import type { InvokeCalldataBuilderArgs } from "@starkware-libs/starknet-privacy-sdk";
 import { SEPOLIA_CONFIG, SEPOLIA_RPC_PROVIDER, getTransfers } from "./config.js";
+import { buildClaimCall } from "./payroll-invoke.js";
+import { requireEnv } from "./env.js";
 // The liquidity / asset-id checks that used to live here moved to
 // `near-intents-liquidity.test.ts`, which imports only the SDK-free connector
 // so it can actually run without a GitHub Packages token — this file cannot,
 // because `./config.js` pulls in the privacy SDK at module scope.
 import { submitSolanaClaim } from "./near-intents-connector.js";
-
-// PayrollOperation::Claim discriminant — see claim-evm.test.ts for the full
-// enum layout explanation.
-const PAYROLL_OPERATION_CLAIM = 2n;
-
-/**
- * Builds the raw felt calldata for `Payroll.privacy_invoke`'s `Claim` branch.
- * Identical to the version in claim-evm.test.ts — duplicated here because
- * importing from a .test.ts file is fragile and both tests may evolve
- * independently. See that file's doc comment for the full positional-Serde
- * explanation verified against the Cairo source.
- */
-function buildClaimCall(params: {
-  payrollAddress: string;
-  runId: bigint;
-  token: string;
-  secret: bigint;
-  noteId: bigint;
-}) {
-  return {
-    contractAddress: params.payrollAddress,
-    calldata: [
-      num.toHex(PAYROLL_OPERATION_CLAIM),
-      num.toHex(params.runId),
-      num.toHex(0), // commitment_hash — recomputed on-chain from secret
-      num.toHex(params.token),
-      num.toHex(0), // amount — read from the stored CommitmentEntry
-      num.toHex(0), // expected_count — unused for Claim
-      num.toHex(params.secret),
-      num.toHex(params.noteId),
-    ],
-  };
-}
-
-// ---------------------------------------------------------------------------
-// This test requires:
-//   1. All Sepolia/SDK credentials from fund-run.test.ts and claim-evm.test.ts
-//      (TEST_ACCOUNT_ADDRESS, TEST_ACCOUNT_PRIVATE_KEY, SEPOLIA_RPC_URL,
-//       SEPOLIA_POOL_ADDRESS, SEPOLIA_PAYROLL_ADDRESS, SEPOLIA_STRK_ADDRESS,
-//       TEST_VIEWING_KEY, SEPOLIA_PROVING_SERVICE_URL).
-//   2. An already-funded, already-open commitment on Sepolia:
-//      SEPOLIA_RUN_ID, SEPOLIA_COMMITMENT_SECRET, SEPOLIA_CLAIM_NOTE_ID,
-//      SEPOLIA_CLAIM_AMOUNT.
-//   3. NEAR Intents env vars:
-//      STARKNET_REFUND_ADDRESS — Starknet address for refunds.
-//      SOLANA_TEST_RECIPIENT — the Solana wallet to receive the bridged funds.
-//      NEAR_INTENTS_API_KEY (optional — unauthenticated works with 0.2% fee).
-//
-// Because NEAR Intents has NO testnet (confirmed in docs, 2026-08-23),
-// this test exercises real mainnet infrastructure. Per CLAUDE.md §4 rule 3,
-// use amounts you would not mind losing and never send a mainnet tx without
-// explicit human confirmation.
-//
-// The Starknet-side claim (Step 1) uses Sepolia for the privacy-pool claim,
-// but Step 2 (the NEAR Intents bridge to Solana) would use mainnet. In a
-// real integration these would both be on mainnet. The test is structured so
-// each step can be run independently when the right env vars are set.
-//
-// What IS verified here against real source/docs (not guessed):
-// - buildClaimCall's calldata shape — verified against contracts/payroll/src/payroll.cairo
-// - The NEAR Intents 1-Click API shape — read from OpenAPI spec on 2026-08-23
-// - The Solana recipient address format — Base58, confirmed in chain-support docs
-// - Asset IDs — queried live from GET /v0/tokens on 2026-08-23
-//
-// What is NOT verified:
-// - Whether the Sepolia privacy-pool claim tx can be used as the deposit for
-//   a mainnet NEAR Intents swap (it cannot — the real flow is fully mainnet).
-//   This test documents the shape; end-to-end execution requires full mainnet
-//   credentials.
-// ---------------------------------------------------------------------------
 
 describe("claim a payroll commitment and bridge it out to Solana via NEAR Intents", () => {
   // SKIPPED DELIBERATELY — this test cannot pass as written, and the reason is
@@ -187,9 +119,3 @@ describe("claim a payroll commitment and bridge it out to Solana via NEAR Intent
     );
   }, 600_000); // 10 min — cross-chain takes time
 });
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
