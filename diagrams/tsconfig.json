@@ -12,5 +12,5 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["generate.ts", "definitions"]
+  "include": ["generate.ts", "style.ts", "definitions"]
 }

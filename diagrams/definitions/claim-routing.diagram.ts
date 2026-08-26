@@ -1,75 +1,99 @@
 import type { DiagramSpec } from "./types.js";
 
-// EVM chain list and ids are copied from the table in
-// docs/evm-claim-coverage.md (read from bridge-core evmCctpDestinations,
-// 2026-08-23). Do not add a chain that is not in that table.
-// Solana bound is docs/solana-claim-coverage.md: connector implemented,
-// e2e claim not exercised (NEAR Intents has no testnet).
+// EVM chain list and ids copied from docs/evm-claim-coverage.md.
+// Solana bound copied from docs/solana-claim-coverage.md.
 
 export const spec: DiagramSpec = {
   name: "claim-routing",
-  graphAttributes: {
-    rankdir: "TB",
-    fontname: "Times-Roman",
-    fontsize: "11",
-    bgcolor: "white",
-  },
-  nodes: [
-    {
-      id: "dest",
-      label: "Claim destination chain",
-      shape: "diamond",
-    },
-    {
-      id: "starknet",
-      label: "Starknet\\npool payout",
-      shape: "box",
-    },
+  title: "StableRoll - Claim Routing",
+  subtitle:
+    "Destination is chosen by the recipient · EVM ids from bridge-core evmCctpDestinations · Solana via NEAR Intents",
+  rankdir: "TB",
+  splines: "spline",
+  size: "16,10",
+  clusters: [
     {
       id: "evm",
-      label: "EVM\\nprivacy-bridge cashOut",
-      shape: "box",
-    },
-    {
-      id: "ethereum",
-      label: "Ethereum\\nmainnet 1 / Sepolia 11155111",
-      shape: "box",
-    },
-    {
-      id: "optimism",
-      label: "Optimism\\nmainnet 10 / OP Sepolia 11155420",
-      shape: "box",
-    },
-    {
-      id: "arbitrum",
-      label: "Arbitrum One\\nmainnet 42161 / Arbitrum Sepolia 421614",
-      shape: "box",
-    },
-    {
-      id: "base",
-      label: "Base\\nmainnet 8453 / Base Sepolia 84532",
-      shape: "box",
-    },
-    {
-      id: "polygon",
-      label: "Polygon\\nmainnet 137 / Polygon Amoy 80002",
-      shape: "box",
+      title: "EVM  -  privacy-bridge cashOut",
+      subtitle: "Five chains from docs/evm-claim-coverage.md · wired, not live-exercised",
+      tone: "client",
     },
     {
       id: "solana",
-      label:
-        "Solana\\nNEAR Intents connector implemented\\ne2e claim not exercised\\n(no testnet; mainnet needs sign-off)",
-      shape: "box",
+      title: "Solana  -  NEAR Intents",
+      subtitle: "Connector implemented · e2e claim not exercised (no testnet)",
+      tone: "decision",
+    },
+  ],
+  nodes: [
+    {
+      id: "dest",
+      title: "Claim destination",
+      subtitle: "Chosen by the recipient at claim time",
+      shape: "diamond",
+      tone: "decision",
+      penwidth: "2.5",
+    },
+    {
+      id: "starknet",
+      title: "Starknet",
+      subtitle: "Pool payout into an open note",
+      subtitle2: "Same chain the run was funded on",
+      tone: "success",
+      penwidth: "2",
+    },
+    {
+      id: "ethereum",
+      title: "Ethereum",
+      subtitle: "mainnet 1 / Sepolia 11155111",
+      tone: "client",
+      cluster: "evm",
+    },
+    {
+      id: "optimism",
+      title: "Optimism",
+      subtitle: "mainnet 10 / OP Sepolia 11155420",
+      tone: "client",
+      cluster: "evm",
+    },
+    {
+      id: "arbitrum",
+      title: "Arbitrum One",
+      subtitle: "mainnet 42161 / Arbitrum Sepolia 421614",
+      tone: "client",
+      cluster: "evm",
+    },
+    {
+      id: "base",
+      title: "Base",
+      subtitle: "mainnet 8453 / Base Sepolia 84532",
+      tone: "client",
+      cluster: "evm",
+    },
+    {
+      id: "polygon",
+      title: "Polygon",
+      subtitle: "mainnet 137 / Polygon Amoy 80002",
+      tone: "client",
+      cluster: "evm",
+    },
+    {
+      id: "solana",
+      title: "Solana USDC",
+      subtitle: "1-Click quote → deposit-notify → poll",
+      subtitle2: "Mainnet-only API · needs funds + human sign-off",
+      tone: "decision",
+      cluster: "solana",
+      penwidth: "2",
     },
   ],
   edges: [
-    { from: "dest", to: "starknet" },
-    { from: "dest", to: "evm" },
-    { from: "dest", to: "solana" },
-    { from: "evm", to: "ethereum" },
-    { from: "evm", to: "optimism" },
-    { from: "evm", to: "arbitrum" },
-    { from: "evm", to: "base" },
-    { from: "evm", to: "polygon" },
+    { from: "dest", to: "starknet", label: "same chain", kind: "success" },
+    { from: "dest", to: "ethereum", label: "EVM" },
+    { from: "dest", to: "optimism" },
+    { from: "dest", to: "arbitrum" },
+    { from: "dest", to: "base" },
+    { from: "dest", to: "polygon" },
+    { from: "dest", to: "solana", label: "Solana", kind: "warning" },
   ],
 };

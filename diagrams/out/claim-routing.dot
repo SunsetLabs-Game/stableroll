@@ -1,23 +1,52 @@
 digraph "claim-routing" {
+  bgcolor="transparent";
+  fontname="Helvetica";
+  fontsize="13";
+  fontcolor="#1E293B";
+  labelloc="t";
+  labeljust="l";
+  pad="0.7";
+  nodesep="0.55";
+  ranksep="0.8";
   rankdir="TB";
-  fontname="Times-Roman";
-  fontsize="11";
-  bgcolor="white";
-  dest [label="Claim destination chain", shape="diamond"];
-  starknet [label="Starknet\npool payout", shape="box"];
-  evm [label="EVM\nprivacy-bridge cashOut", shape="box"];
-  ethereum [label="Ethereum\nmainnet 1 / Sepolia 11155111", shape="box"];
-  optimism [label="Optimism\nmainnet 10 / OP Sepolia 11155420", shape="box"];
-  arbitrum [label="Arbitrum One\nmainnet 42161 / Arbitrum Sepolia 421614", shape="box"];
-  base [label="Base\nmainnet 8453 / Base Sepolia 84532", shape="box"];
-  polygon [label="Polygon\nmainnet 137 / Polygon Amoy 80002", shape="box"];
-  solana [label="Solana\nNEAR Intents connector implemented\ne2e claim not exercised\n(no testnet; mainnet needs sign-off)", shape="box"];
-  dest -> starknet;
-  dest -> evm;
-  dest -> solana;
-  evm -> ethereum;
-  evm -> optimism;
-  evm -> arbitrum;
-  evm -> base;
-  evm -> polygon;
+  splines="spline";
+  size="16,10";
+  label=<<B>StableRoll - Claim Routing</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">Destination is chosen by the recipient · EVM ids from bridge-core evmCctpDestinations · Solana via NEAR Intents</FONT>>;
+  node [shape="box", style="filled,rounded", fillcolor="#F8FAFC", color="#64748B", fontname="Helvetica", fontsize="11", fontcolor="#1E293B", margin="0.22,0.13", penwidth="1.6"];
+  edge [color="#94A3B8", fontname="Helvetica", fontsize="10", fontcolor="#475569", arrowsize="0.85", penwidth="1.4"];
+  subgraph cluster_evm {
+    label=<<B>EVM  -  privacy-bridge cashOut</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">Five chains from docs/evm-claim-coverage.md · wired, not live-exercised</FONT>>;
+    style="rounded";
+    color="#3B82F6";
+    fontcolor="#3B82F6";
+    fontname="Helvetica";
+    fontsize="12";
+    penwidth="2.5";
+    margin="18";
+    ethereum [label=<<B>Ethereum</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">mainnet 1 / Sepolia 11155111</FONT>>, fillcolor="#EFF6FF", color="#3B82F6"];
+    optimism [label=<<B>Optimism</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">mainnet 10 / OP Sepolia 11155420</FONT>>, fillcolor="#EFF6FF", color="#3B82F6"];
+    arbitrum [label=<<B>Arbitrum One</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">mainnet 42161 / Arbitrum Sepolia 421614</FONT>>, fillcolor="#EFF6FF", color="#3B82F6"];
+    base [label=<<B>Base</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">mainnet 8453 / Base Sepolia 84532</FONT>>, fillcolor="#EFF6FF", color="#3B82F6"];
+    polygon [label=<<B>Polygon</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">mainnet 137 / Polygon Amoy 80002</FONT>>, fillcolor="#EFF6FF", color="#3B82F6"];
+  }
+  subgraph cluster_solana {
+    label=<<B>Solana  -  NEAR Intents</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">Connector implemented · e2e claim not exercised (no testnet)</FONT>>;
+    style="rounded";
+    color="#D97706";
+    fontcolor="#D97706";
+    fontname="Helvetica";
+    fontsize="12";
+    penwidth="2.5";
+    margin="18";
+    solana [label=<<B>Solana USDC</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">1-Click quote → deposit-notify → poll</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">Mainnet-only API · needs funds + human sign-off</FONT>>, fillcolor="#FFFBEB", color="#D97706", penwidth="2"];
+  }
+  dest [label=<<B>Claim destination</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">Chosen by the recipient at claim time</FONT>>, fillcolor="#FFFBEB", color="#D97706", shape="diamond", penwidth="2.5"];
+  starknet [label=<<B>Starknet</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">Pool payout into an open note</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">Same chain the run was funded on</FONT>>, fillcolor="#ECFDF5", color="#059669", penwidth="2"];
+  dest -> starknet [color="#059669", label="same chain", fontcolor="#059669"];
+  dest -> ethereum [color="#94A3B8", label="EVM"];
+  dest -> optimism [color="#94A3B8"];
+  dest -> arbitrum [color="#94A3B8"];
+  dest -> base [color="#94A3B8"];
+  dest -> polygon [color="#94A3B8"];
+  dest -> solana [color="#D97706", label="Solana", fontcolor="#D97706"];
 }

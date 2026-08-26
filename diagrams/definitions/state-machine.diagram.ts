@@ -1,75 +1,114 @@
 import type { DiagramSpec } from "./types.js";
 
-// Sourced from contracts/payroll/src/payroll.cairo RunInfo / is_complete /
-// FundCommitment close path. expected_count and expected_total are fixed at
-// OpenRun. closed is set only when funded_count == expected_count AND
-// total_committed == expected_total. is_complete = closed &&
-// paid_count == expected_count && total_paid == total_committed.
+// Invariants copied from contracts/payroll/src/payroll.cairo RunInfo,
+// is_complete, and the FundCommitment close path.
 
 export const spec: DiagramSpec = {
   name: "state-machine",
-  graphAttributes: {
-    rankdir: "TB",
-    fontname: "Times-Roman",
-    fontsize: "11",
-    bgcolor: "white",
-  },
+  title: "StableRoll - Payroll Run State Machine",
+  subtitle:
+    "expected_count and expected_total are fixed at OpenRun · closed only when every promised recipient is funded at the promised total",
+  rankdir: "TB",
+  splines: "spline",
+  size: "12,14",
   nodes: [
     {
+      id: "start",
+      title: "",
+      shape: "circle",
+      tone: "default",
+    },
+    {
       id: "open",
-      label: "OpenRun\\nfixes expected_count\\nand expected_total\\n(reject either = 0)",
-      shape: "box",
+      title: "OpenRun",
+      subtitle: "Fixes expected_count and expected_total",
+      subtitle2: "Rejects either = 0 · run_id = compute_run_id(owner_secret)",
+      tone: "accent",
+      penwidth: "2",
     },
     {
       id: "fund",
-      label: "FundCommitment*",
-      shape: "box",
+      title: "FundCommitment",
+      subtitle: "Must prove owner_secret (NOT_RUN_OWNER otherwise)",
+      subtitle2: "Token must match the run · increments funded_count",
+      tone: "backend",
+      penwidth: "2",
     },
     {
       id: "last",
-      label:
-        "last fund:\\nfunded_count == expected_count\\nAND total_committed == expected_total?",
+      title: "Last slot?",
+      subtitle: "funded_count == expected_count",
+      subtitle2: "AND total_committed == expected_total",
       shape: "diamond",
+      tone: "decision",
+      penwidth: "2",
     },
     {
       id: "closed",
-      label: "closed = true",
-      shape: "box",
+      title: "closed = true",
+      subtitle: "Run is fully funded at the promised budget",
+      tone: "success",
+      penwidth: "2",
     },
     {
       id: "under",
-      label: "UNDER_COMMITTED",
-      shape: "box",
+      title: "UNDER_COMMITTED",
+      subtitle: "Final FundCommitment shorts the budget",
+      subtitle2: "Payer cannot hide an underpayment",
+      tone: "danger",
+      penwidth: "2",
     },
     {
       id: "omit",
-      label: "omitted recipient\\nclosed stays false\\nis_complete never true",
-      shape: "box",
+      title: "Omitted recipient",
+      subtitle: "funded_count never reaches expected_count",
+      subtitle2: "closed stays false · is_complete can never be true",
+      tone: "danger",
+      penwidth: "2",
     },
     {
       id: "claim",
-      label: "Claim*\\nsecret preimage\\nrecomputes commitment hash",
-      shape: "box",
+      title: "Claim",
+      subtitle: "Secret preimage recomputes the commitment hash",
+      subtitle2: "paid_count and total_paid increment",
+      tone: "client",
+      penwidth: "2",
     },
     {
       id: "complete",
-      label:
-        "is_complete\\nclosed AND paid_count == expected_count\\nAND total_paid == total_committed",
-      shape: "box",
+      title: "is_complete",
+      subtitle: "closed AND paid_count == expected_count",
+      subtitle2: "AND total_paid == total_committed",
+      tone: "success",
+      penwidth: "3",
     },
   ],
   edges: [
+    { from: "start", to: "open", style: "invis" },
     { from: "open", to: "fund" },
     { from: "fund", to: "fund", label: "more slots remain" },
     { from: "fund", to: "last", label: "attempt final slot" },
-    { from: "last", to: "closed", label: "totals match" },
-    { from: "last", to: "under", label: "short the last" },
+    { from: "last", to: "closed", label: "totals match", kind: "success", penwidth: "2" },
+    {
+      from: "last",
+      to: "under",
+      label: "short the last",
+      kind: "danger",
+    },
     {
       from: "fund",
       to: "omit",
       label: "never fund a promised recipient",
+      kind: "danger",
+      style: "dashed",
     },
     { from: "closed", to: "claim" },
-    { from: "claim", to: "complete", label: "every funded commitment claimed" },
+    {
+      from: "claim",
+      to: "complete",
+      label: "every funded commitment claimed",
+      kind: "success",
+      penwidth: "2",
+    },
   ],
 };
