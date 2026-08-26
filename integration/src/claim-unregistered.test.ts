@@ -53,6 +53,7 @@ describe("unregistered recipient claims via commitment secret", () => {
       amount,
       ownerSecret,
       commitmentSecret,
+      notify: false,
     });
 
     const transfers = await getTransfers(recipient, {
