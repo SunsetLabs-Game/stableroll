@@ -48,7 +48,7 @@ jobs:
       # `payroll-notify` is a `file:../notify` dependency. tsc follows that
       # package's .ts exports, and those files resolve @waku/* from
       # notify/node_modules (a sibling of integration/, not a parent).
-      - name: Install notify (file: dependency source)
+      - name: Install notify from the sibling package
         working-directory: notify
         run: npm ci
 
