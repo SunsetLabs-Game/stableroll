@@ -1,0 +1,122 @@
+import type { DiagramSpec } from "./types.js";
+
+// Sourced from contracts/payroll/src/payroll.cairo RunInfo (no payer address,
+// owner_commitment is secret-proven, docs/adr-run-ownership.md),
+// docs/evm-claim-coverage.md, and docs/solana-claim-coverage.md.
+
+export const spec: DiagramSpec = {
+  name: "architecture",
+  title: "StableRoll - System Architecture",
+  subtitle:
+    "A company funds a payroll run once on Starknet · recipients claim on Starknet, EVM, or Solana · no on-chain payer↔recipient link",
+  rankdir: "TB",
+  splines: "spline",
+  size: "14,11",
+  clusters: [
+    {
+      id: "pool",
+      title: "STRK20 Privacy Pool",
+      subtitle: "Shielded notes · InvokeExternal is the only caller of Payroll",
+      tone: "external",
+    },
+    {
+      id: "payroll",
+      title: "Payroll helper  -  privacy_invoke",
+      subtitle: "Aggregate accounting · no payer address stored",
+      tone: "backend",
+    },
+    {
+      id: "claim",
+      title: "Claim legs",
+      subtitle: "Downstream of a Starknet Claim · never custody",
+      tone: "client",
+    },
+  ],
+  nodes: [
+    {
+      id: "payer",
+      title: "Payer",
+      subtitle: "Holds owner_secret off-chain",
+      subtitle2: "Opens the run · funds each commitment",
+      tone: "accent",
+      penwidth: "2",
+    },
+    {
+      id: "pool",
+      title: "Privacy Pool",
+      subtitle: "Mainnet 0x0403…812a",
+      subtitle2: "InvokeExternal after a verified STARK proof",
+      tone: "external",
+      cluster: "pool",
+      penwidth: "2",
+    },
+    {
+      id: "openfund",
+      title: "OpenRun / FundCommitment",
+      subtitle: "privacy_invoke, called only by the pool",
+      subtitle2: "owner_secret proves run ownership",
+      tone: "backend",
+      cluster: "payroll",
+      penwidth: "2.5",
+    },
+    {
+      id: "runinfo",
+      title: "RunInfo",
+      subtitle: "expected_count · expected_total · closed",
+      subtitle2: "owner_commitment (secret-proven) · no payer address",
+      tone: "backend",
+      cluster: "payroll",
+    },
+    {
+      id: "claimop",
+      title: "Claim",
+      subtitle: "Recipient reveals the commitment secret",
+      subtitle2: "Hash is recomputed on-chain · never passed in",
+      tone: "backend",
+      cluster: "payroll",
+      penwidth: "2",
+    },
+    {
+      id: "starknet",
+      title: "Starknet wallet",
+      subtitle: "Pool payout into an open note",
+      tone: "client",
+      cluster: "claim",
+    },
+    {
+      id: "evm",
+      title: "EVM wallet",
+      subtitle: "privacy-bridge cashOut",
+      subtitle2: "Wired · not live-exercised",
+      tone: "client",
+      cluster: "claim",
+    },
+    {
+      id: "solana",
+      title: "Solana wallet",
+      subtitle: "NEAR Intents 1-Click connector",
+      subtitle2: "Live-quoted · e2e claim not exercised",
+      tone: "decision",
+      cluster: "claim",
+    },
+  ],
+  edges: [
+    { from: "payer", to: "pool", label: "fund (shielded)" },
+    {
+      from: "pool",
+      to: "openfund",
+      label: "InvokeExternal",
+      kind: "success",
+      penwidth: "2",
+    },
+    { from: "openfund", to: "runinfo" },
+    {
+      from: "runinfo",
+      to: "claimop",
+      label: "recipient holds\\ncommitment secret",
+    },
+    { from: "claimop", to: "starknet" },
+    { from: "claimop", to: "evm" },
+    { from: "claimop", to: "solana", kind: "warning" },
+  ],
+};

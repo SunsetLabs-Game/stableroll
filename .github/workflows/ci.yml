@@ -96,3 +96,29 @@ jobs:
       # directory to exercise the real send/receive path.
       - run: npm run test:offline
       - run: npm run typecheck
+
+  diagrams:
+    name: Diagrams (regenerate, fail on drift)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: diagrams
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: sudo apt-get update && sudo apt-get install -y graphviz
+      - run: npm ci
+      - run: npm run generate
+      # DOT is fully determined by the typed specs, so a forgotten
+      # regenerate shows up here. SVG layout numbers depend on the
+      # Graphviz version (apt 2.43 vs Homebrew 15.x) and are not
+      # compared byte-for-byte; the files must still be produced.
+      - name: Fail if committed DOT drifted from source
+        run: git diff --exit-code -- out/*.dot
+      - name: Fail if generate dropped an SVG
+        run: |
+          test -s out/architecture.svg
+          test -s out/state-machine.svg
+          test -s out/claim-routing.svg
