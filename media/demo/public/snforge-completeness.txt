@@ -1,0 +1,20 @@
+Collected 17 test(s) from payroll package
+Running 17 test(s) from src/
+[PASS] payroll::tests::test_run_id_hash_matches_typescript (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~21592)
+[PASS] payroll::tests::test_commitment_hash_matches_typescript (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~21592)
+[PASS] payroll::tests::test_run_owner_commitment_hash_matches_typescript (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~21592)
+[PASS] payroll::tests::test_open_run_rejects_zero_owner_secret (l1_gas: ~0, l1_data_gas: ~192, l2_gas: ~1363922)
+[PASS] payroll::tests::test_direct_caller_is_rejected (l1_gas: ~0, l1_data_gas: ~192, l2_gas: ~1154242)
+[PASS] payroll::tests::test_claim_with_unknown_secret_reverts (l1_gas: ~0, l1_data_gas: ~1152, l2_gas: ~7617603)
+[PASS] payroll::tests::test_underfunding_the_last_commitment_reverts (l1_gas: ~0, l1_data_gas: ~1056, l2_gas: ~7349595)
+[PASS] payroll::tests::test_open_run_rejects_zero_expected_total (l1_gas: ~0, l1_data_gas: ~192, l2_gas: ~1363922)
+[PASS] payroll::tests::test_commitment_token_must_match_the_run (l1_gas: ~0, l1_data_gas: ~576, l2_gas: ~3953530)
+[PASS] payroll::tests::test_cannot_fund_more_recipients_than_promised (l1_gas: ~0, l1_data_gas: ~1152, l2_gas: ~7694214)
+[PASS] payroll::tests::test_open_run_rejects_run_id_not_derived_from_secret (l1_gas: ~0, l1_data_gas: ~192, l2_gas: ~1365113)
+[PASS] payroll::tests::test_fund_commitment_increments_run_totals (l1_gas: ~0, l1_data_gas: ~1056, l2_gas: ~7003220)
+[PASS] payroll::tests::test_double_claim_reverts (l1_gas: ~0, l1_data_gas: ~1440, l2_gas: ~10244765)
+[PASS] payroll::tests::test_fund_commitment_rejects_third_party_without_owner_secret (l1_gas: ~0, l1_data_gas: ~576, l2_gas: ~3954721)
+[PASS] payroll::tests::test_omitted_recipient_can_never_be_marked_complete (l1_gas: ~0, l1_data_gas: ~1344, l2_gas: ~9966572)
+[PASS] payroll::tests::test_open_run_rejects_zero_expected_count (l1_gas: ~0, l1_data_gas: ~192, l2_gas: ~1363922)
+[PASS] payroll::tests::test_run_incomplete_until_all_commitments_claimed (l1_gas: ~0, l1_data_gas: ~1824, l2_gas: ~15737058)
+Tests: 17 passed, 0 failed, 0 ignored, 0 filtered out

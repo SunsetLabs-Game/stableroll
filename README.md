@@ -162,6 +162,14 @@ If you hit a build/toolchain error, check `CLAUDE.md` §3 first — its
 error-to-cause map covers every trap this repo's toolchain has actually
 produced, and the fix is almost never what the error text suggests.
 
+## Demo video
+
+A 72-second product demo (Remotion composition `Demo` at `media/demo/`) is
+recorded in [`strk20.json`](strk20.json) `demo_video` and hosted as a
+[GitHub Release asset](https://github.com/SunsetLabs-Game/stableroll/releases/download/demo-video/demo.mp4).
+It uses the generated architecture SVGs and a real `snforge test` capture.
+Mainnet tx hashes are omitted until issue #2 fills `strk20.json` `transactions`.
+
 ## Mainnet contracts and transactions
 
 Recorded in [`strk20.json`](strk20.json). Once at least 3 mainnet
