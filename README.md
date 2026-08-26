@@ -50,7 +50,7 @@ This repo is mid-build. Only claim the chains and legs that are real:
 | `contracts/payroll` — Cairo contract, `privacy_invoke`-driven run accounting, run-ownership authorization | Done — tested (`snforge test`, CI-enforced) |
 | Starknet → Starknet fund + claim, via the pool | Done and tested locally. Not yet exercised against live Sepolia or mainnet infrastructure |
 | EVM claim leg (privacy-bridge) | Wired against the real API (`cashOut`, see `docs/evm-claim-coverage.md`). Not yet exercised against live testnet infrastructure |
-| Solana claim leg (NEAR Intents) | Planned — not implemented yet |
+| Solana claim leg (NEAR Intents) | Connector implemented against the real 1-Click API (see `docs/solana-claim-coverage.md`). Route verified live — pinned asset IDs and a dry-run quote are re-checked by `npm run test:liquidity`. The end-to-end claim is **not** exercised: NEAR Intents has no testnet, so it needs mainnet funds and human sign-off |
 | Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`) — not yet wired to `FundCommitment` |
 | Cavos payer/recipient UX | Planned — not implemented yet |
 | Mainnet eligibility transactions | Not yet recorded — `strk20.json`'s `transactions` array is currently empty |
@@ -83,9 +83,11 @@ Recipient ──claim (reveals commitment secret)──▶ Payroll.privacy_invok
   notifications, keyed off the same commitment secret as the on-chain claim,
   never a Starknet address (see the package's `topics.ts`). Not yet called
   from anywhere else in the repo.
-- The Solana claim leg and the Cavos UX layer are separate, not-yet-built
-  components that will sit downstream of a Starknet claim — they never touch
-  custody or the privacy-critical accounting above.
+- **`integration/src/near-intents-connector.ts`** — the Solana claim leg:
+  quote → deposit-notify → poll, against NEAR Intents' 1-Click API. It sits
+  downstream of a Starknet claim and never touches custody or the
+  privacy-critical accounting above.
+- The Cavos UX layer is a separate, not-yet-built component.
 
 ## Dependency transparency
 
