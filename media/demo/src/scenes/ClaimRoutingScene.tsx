@@ -2,7 +2,7 @@ import { Easing, Img, Interactive, interpolate, staticFile, useCurrentFrame, use
 import { Stage } from "../components/Stage";
 import { sans } from "../fonts";
 
-export const ArchitectureScene: React.FC = () => {
+export const ClaimRoutingScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -14,7 +14,7 @@ export const ArchitectureScene: React.FC = () => {
           position: "absolute",
           top: 56,
           left: 80,
-          color: "#7DD3FC",
+          color: "#93C5FD",
           fontFamily: sans,
           fontSize: 20,
           letterSpacing: 6,
@@ -25,7 +25,7 @@ export const ArchitectureScene: React.FC = () => {
           }),
         }}
       >
-        ARCHITECTURE
+        CLAIM ROUTING
       </Interactive.Div>
       <Interactive.Div
         name="Headline"
@@ -33,9 +33,10 @@ export const ArchitectureScene: React.FC = () => {
           position: "absolute",
           top: 92,
           left: 80,
+          right: 80,
           color: "#F8FAFC",
           fontFamily: sans,
-          fontSize: 48,
+          fontSize: 40,
           fontWeight: 700,
           opacity: interpolate(frame, [0.2 * fps, 0.8 * fps], [0, 1], {
             extrapolateLeft: "clamp",
@@ -43,24 +44,24 @@ export const ArchitectureScene: React.FC = () => {
           }),
         }}
       >
-        The pool is the only caller. RunInfo stores no payer.
+        Five EVM chains from the real bridge-core registry. Solana is a live-quoted connector, not an e2e claim.
       </Interactive.Div>
       <Interactive.Div
         name="Diagram"
         style={{
           position: "absolute",
-          top: 170,
-          left: 80,
-          right: 80,
-          height: 780,
+          top: 220,
+          left: 40,
+          right: 40,
+          height: 760,
           backgroundColor: "#F8FAFC",
           borderRadius: 20,
-          padding: 24,
+          padding: 16,
           opacity: interpolate(frame, [0.6 * fps, 1.4 * fps], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
           }),
-          scale: interpolate(frame, [0.6 * fps, 1.8 * fps], [0.96, 1], {
+          scale: interpolate(frame, [0.6 * fps, 1.8 * fps], [0.97, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
             easing: Easing.spring({ damping: 200 }),
@@ -69,7 +70,7 @@ export const ArchitectureScene: React.FC = () => {
         }}
       >
         <Img
-          src={staticFile("architecture.svg")}
+          src={staticFile("claim-routing.svg")}
           style={{ width: "100%", height: "100%", objectFit: "contain" }}
         />
       </Interactive.Div>

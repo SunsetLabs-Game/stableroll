@@ -1,63 +1,70 @@
-import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
-import { COLORS, FONTS } from "../theme";
+import { Easing, Interactive, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Stage } from "../components/Stage";
+import { sans } from "../fonts";
 
 export const ClosingScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const opacity = interpolate(frame, [0, 0.8 * fps], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-  });
 
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: COLORS.bg,
-        padding: "100px 80px",
-        opacity,
-        justifyContent: "center",
-      }}
-    >
-      <div
+    <Stage>
+      <Interactive.Div
+        name="Title"
         style={{
-          color: COLORS.accent,
-          fontFamily: FONTS.sans,
-          fontSize: 28,
-          letterSpacing: 2,
-          textTransform: "uppercase",
-          marginBottom: 20,
+          position: "absolute",
+          top: 320,
+          left: 80,
+          color: "#F8FAFC",
+          fontFamily: sans,
+          fontSize: 96,
+          fontWeight: 700,
+          letterSpacing: -2,
+          opacity: interpolate(frame, [0, 0.8 * fps], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+            easing: Easing.bezier(0.16, 1, 0.3, 1),
+          }),
         }}
       >
         StableRoll
-      </div>
-      <div
+      </Interactive.Div>
+      <Interactive.Div
+        name="Repo"
         style={{
-          color: COLORS.text,
-          fontFamily: FONTS.sans,
-          fontSize: 72,
-          fontWeight: 700,
-          lineHeight: 1.15,
-          maxWidth: 1500,
-        }}
-      >
-        Cross-chain private payroll on Starknet.
-      </div>
-      <div
-        style={{
-          color: COLORS.muted,
-          fontFamily: FONTS.sans,
+          position: "absolute",
+          top: 450,
+          left: 80,
+          color: "#7DD3FC",
+          fontFamily: sans,
           fontSize: 36,
-          marginTop: 32,
-          lineHeight: 1.4,
+          opacity: interpolate(frame, [0.5 * fps, 1.3 * fps], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          }),
         }}
       >
         github.com/SunsetLabs-Game/stableroll
-        <br />
+      </Interactive.Div>
+      <Interactive.Div
+        name="License"
+        style={{
+          position: "absolute",
+          top: 520,
+          left: 80,
+          color: "#94A3B8",
+          fontFamily: sans,
+          fontSize: 28,
+          lineHeight: 1.5,
+          opacity: interpolate(frame, [0.9 * fps, 1.7 * fps], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          }),
+        }}
+      >
         Apache-2.0
         <br />
         Read the README for what is and is not private.
-      </div>
-    </AbsoluteFill>
+      </Interactive.Div>
+    </Stage>
   );
 };

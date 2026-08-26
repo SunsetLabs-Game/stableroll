@@ -1,12 +1,30 @@
 import "./index.css";
 import { Composition, Folder, type CalculateMetadataFunction } from "remotion";
 import manifest from "../../../strk20.json";
-import { Demo, FPS, HEIGHT, WIDTH, demoDurationInFrames, type DemoProps } from "./Demo";
+import {
+  ARCHITECTURE_FRAMES,
+  CLOSING_FRAMES,
+  COMPLETENESS_FRAMES,
+  Demo,
+  FPS,
+  HEIGHT,
+  MAINNET_FRAMES,
+  PROBLEM_FRAMES,
+  ROUTING_FRAMES,
+  STATE_FRAMES,
+  TITLE_FRAMES,
+  WIDTH,
+  demoDurationInFrames,
+  type DemoProps,
+} from "./Demo";
 import { ArchitectureScene } from "./scenes/ArchitectureScene";
+import { ClaimRoutingScene } from "./scenes/ClaimRoutingScene";
 import { ClosingScene } from "./scenes/ClosingScene";
 import { CompletenessScene } from "./scenes/CompletenessScene";
 import { MainnetProofScene } from "./scenes/MainnetProofScene";
 import { ProblemScene } from "./scenes/ProblemScene";
+import { StateMachineScene } from "./scenes/StateMachineScene";
+import { TitleScene } from "./scenes/TitleScene";
 
 const transactions: string[] = Array.isArray(manifest.transactions)
   ? manifest.transactions
@@ -24,9 +42,17 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Folder name="Demo-Scenes">
         <Composition
+          id="TitleScene"
+          component={TitleScene}
+          durationInFrames={TITLE_FRAMES}
+          fps={FPS}
+          width={WIDTH}
+          height={HEIGHT}
+        />
+        <Composition
           id="ProblemScene"
           component={ProblemScene}
-          durationInFrames={12 * FPS}
+          durationInFrames={PROBLEM_FRAMES}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -34,7 +60,23 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="ArchitectureScene"
           component={ArchitectureScene}
-          durationInFrames={22 * FPS}
+          durationInFrames={ARCHITECTURE_FRAMES}
+          fps={FPS}
+          width={WIDTH}
+          height={HEIGHT}
+        />
+        <Composition
+          id="StateMachineScene"
+          component={StateMachineScene}
+          durationInFrames={STATE_FRAMES}
+          fps={FPS}
+          width={WIDTH}
+          height={HEIGHT}
+        />
+        <Composition
+          id="ClaimRoutingScene"
+          component={ClaimRoutingScene}
+          durationInFrames={ROUTING_FRAMES}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -42,7 +84,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="CompletenessScene"
           component={CompletenessScene}
-          durationInFrames={28 * FPS}
+          durationInFrames={COMPLETENESS_FRAMES}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -50,7 +92,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="MainnetProofScene"
           component={MainnetProofScene}
-          durationInFrames={16 * FPS}
+          durationInFrames={MAINNET_FRAMES}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -59,7 +101,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="ClosingScene"
           component={ClosingScene}
-          durationInFrames={10 * FPS}
+          durationInFrames={CLOSING_FRAMES}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}

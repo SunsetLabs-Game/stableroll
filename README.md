@@ -164,7 +164,7 @@ produced, and the fix is almost never what the error text suggests.
 
 ## Demo video
 
-A 72-second product demo (Remotion composition `Demo` at `media/demo/`) is
+A ~93-second product demo (Remotion composition `Demo` at `media/demo/`) is
 recorded in [`strk20.json`](strk20.json) `demo_video` and hosted as a
 [GitHub Release asset](https://github.com/SunsetLabs-Game/stableroll/releases/download/demo-video/demo.mp4).
 It uses the generated architecture SVGs and a real `snforge test` capture.

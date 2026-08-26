@@ -2,122 +2,126 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 
-<svg width="1142pt" height="231pt"
- viewBox="0.00 0.00 1142.00 231.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 227)">
+<svg width="1152pt" height="263pt"
+ viewBox="0.00 0.00 1152.00 263.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.697119 0.697119) rotate(0) translate(50.4 326.81)">
 <title>claim&#45;routing</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-227 1137.88,-227 1137.88,4 -4,4"/>
+<text xml:space="preserve" text-anchor="start" x="153.12" y="-261.06" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="13.00" fill="#1e293b">StableRoll &#45; Claim Routing</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-251.86" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Destination is chosen by the recipient · EVM ids from bridge&#45;core evmCctpDestinations · Solana via NEAR Intents</text>
+<g id="clust1" class="cluster">
+<title>cluster_evm</title>
+<path fill="none" stroke="#3b82f6" stroke-width="2.5" d="M20,-12.5C20,-12.5 1072,-12.5 1072,-12.5 1078,-12.5 1084,-18.5 1084,-24.5 1084,-24.5 1084,-104.22 1084,-104.22 1084,-110.22 1078,-116.22 1072,-116.22 1072,-116.22 20,-116.22 20,-116.22 14,-116.22 8,-110.22 8,-104.22 8,-104.22 8,-24.5 8,-24.5 8,-18.5 14,-12.5 20,-12.5"/>
+<text xml:space="preserve" text-anchor="start" x="75.62" y="-101.82" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#3b82f6">EVM &#160;&#45; &#160;privacy&#45;bridge cashOut</text>
+<text xml:space="preserve" text-anchor="start" x="16" y="-92.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Five chains from docs/evm&#45;claim&#45;coverage.md · wired, not live&#45;exercised</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_solana</title>
+<path fill="none" stroke="#d97706" stroke-width="2.5" d="M1104,-8C1104,-8 1346,-8 1346,-8 1352,-8 1358,-14 1358,-20 1358,-20 1358,-108.72 1358,-108.72 1358,-114.72 1352,-120.72 1346,-120.72 1346,-120.72 1104,-120.72 1104,-120.72 1098,-120.72 1092,-114.72 1092,-108.72 1092,-108.72 1092,-20 1092,-20 1092,-14 1098,-8 1104,-8"/>
+<text xml:space="preserve" text-anchor="start" x="1158.5" y="-106.32" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="12.00" fill="#d97706">Solana &#160;&#45; &#160;NEAR Intents</text>
+<text xml:space="preserve" text-anchor="start" x="1100" y="-97.17" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Connector implemented · e2e claim not exercised (no testnet)</text>
+</g>
 
 <g id="node1" class="node">
-<title>dest</title>
-<polygon fill="none" stroke="black" points="548.12,-223 407.47,-205 548.12,-187 688.78,-205 548.12,-223"/>
-<text xml:space="preserve" text-anchor="middle" x="548.12" y="-199.95" font-family="Times,serif" font-size="14.00">Claim destination chain</text>
+<title>ethereum</title>
+<path fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" d="M164.09,-69.22C164.09,-69.22 37.91,-69.22 37.91,-69.22 31.91,-69.22 25.91,-63.22 25.91,-57.22 25.91,-57.22 25.91,-42.5 25.91,-42.5 25.91,-36.5 31.91,-30.5 37.91,-30.5 37.91,-30.5 164.09,-30.5 164.09,-30.5 170.09,-30.5 176.09,-36.5 176.09,-42.5 176.09,-42.5 176.09,-57.22 176.09,-57.22 176.09,-63.22 170.09,-69.22 164.09,-69.22"/>
+<text xml:space="preserve" text-anchor="start" x="75.5" y="-50.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Ethereum</text>
+<text xml:space="preserve" text-anchor="start" x="41.75" y="-41.31" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">mainnet 1 / Sepolia 11155111</text>
 </g>
 
 <g id="node2" class="node">
+<title>optimism</title>
+<path fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" d="M376.34,-69.22C376.34,-69.22 227.66,-69.22 227.66,-69.22 221.66,-69.22 215.66,-63.22 215.66,-57.22 215.66,-57.22 215.66,-42.5 215.66,-42.5 215.66,-36.5 221.66,-30.5 227.66,-30.5 227.66,-30.5 376.34,-30.5 376.34,-30.5 382.34,-30.5 388.34,-36.5 388.34,-42.5 388.34,-42.5 388.34,-57.22 388.34,-57.22 388.34,-63.22 382.34,-69.22 376.34,-69.22"/>
+<text xml:space="preserve" text-anchor="start" x="276.88" y="-50.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Optimism</text>
+<text xml:space="preserve" text-anchor="start" x="231.5" y="-41.31" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">mainnet 10 / OP Sepolia 11155420</text>
+</g>
+
+<g id="node3" class="node">
+<title>arbitrum</title>
+<path fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" d="M617.97,-69.22C617.97,-69.22 440.03,-69.22 440.03,-69.22 434.03,-69.22 428.03,-63.22 428.03,-57.22 428.03,-57.22 428.03,-42.5 428.03,-42.5 428.03,-36.5 434.03,-30.5 440.03,-30.5 440.03,-30.5 617.97,-30.5 617.97,-30.5 623.97,-30.5 629.97,-36.5 629.97,-42.5 629.97,-42.5 629.97,-57.22 629.97,-57.22 629.97,-63.22 623.97,-69.22 617.97,-69.22"/>
+<text xml:space="preserve" text-anchor="start" x="493.38" y="-50.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Arbitrum One</text>
+<text xml:space="preserve" text-anchor="start" x="443.88" y="-41.31" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">mainnet 42161 / Arbitrum Sepolia 421614</text>
+</g>
+
+<g id="node4" class="node">
+<title>base</title>
+<path fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" d="M835.97,-69.22C835.97,-69.22 682.03,-69.22 682.03,-69.22 676.03,-69.22 670.03,-63.22 670.03,-57.22 670.03,-57.22 670.03,-42.5 670.03,-42.5 670.03,-36.5 676.03,-30.5 682.03,-30.5 682.03,-30.5 835.97,-30.5 835.97,-30.5 841.97,-30.5 847.97,-36.5 847.97,-42.5 847.97,-42.5 847.97,-57.22 847.97,-57.22 847.97,-63.22 841.97,-69.22 835.97,-69.22"/>
+<text xml:space="preserve" text-anchor="start" x="745.88" y="-50.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Base</text>
+<text xml:space="preserve" text-anchor="start" x="685.88" y="-41.31" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">mainnet 8453 / Base Sepolia 84532</text>
+</g>
+
+<g id="node5" class="node">
+<title>polygon</title>
+<path fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" d="M1053.59,-69.22C1053.59,-69.22 900.41,-69.22 900.41,-69.22 894.41,-69.22 888.41,-63.22 888.41,-57.22 888.41,-57.22 888.41,-42.5 888.41,-42.5 888.41,-36.5 894.41,-30.5 900.41,-30.5 900.41,-30.5 1053.59,-30.5 1053.59,-30.5 1059.59,-30.5 1065.59,-36.5 1065.59,-42.5 1065.59,-42.5 1065.59,-57.22 1065.59,-57.22 1065.59,-63.22 1059.59,-69.22 1053.59,-69.22"/>
+<text xml:space="preserve" text-anchor="start" x="955.25" y="-50.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Polygon</text>
+<text xml:space="preserve" text-anchor="start" x="904.25" y="-41.31" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">mainnet 137 / Polygon Amoy 80002</text>
+</g>
+
+<g id="node6" class="node">
+<title>solana</title>
+<path fill="#fffbeb" stroke="#d97706" stroke-width="2" d="M1326.46,-73.72C1326.46,-73.72 1121.54,-73.72 1121.54,-73.72 1115.54,-73.72 1109.54,-67.72 1109.54,-61.72 1109.54,-61.72 1109.54,-38 1109.54,-38 1109.54,-32 1115.54,-26 1121.54,-26 1121.54,-26 1326.46,-26 1326.46,-26 1332.46,-26 1338.46,-32 1338.46,-38 1338.46,-38 1338.46,-61.72 1338.46,-61.72 1338.46,-67.72 1332.46,-73.72 1326.46,-73.72"/>
+<text xml:space="preserve" text-anchor="start" x="1188.38" y="-54.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Solana USDC</text>
+<text xml:space="preserve" text-anchor="start" x="1148.62" y="-45.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">1&#45;Click quote → deposit&#45;notify → poll</text>
+<text xml:space="preserve" text-anchor="start" x="1125.38" y="-36.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Mainnet&#45;only API · needs funds + human sign&#45;off</text>
+</g>
+
+<g id="node7" class="node">
+<title>dest</title>
+<path fill="#fffbeb" stroke="#d97706" stroke-width="2.5" d="M747.26,-243.91C747.26,-243.91 589.06,-210.19 589.06,-210.19 583.19,-208.94 583.19,-206.44 589.06,-205.19 589.06,-205.19 747.26,-171.47 747.26,-171.47 753.13,-170.22 764.87,-170.22 770.74,-171.47 770.74,-171.47 928.94,-205.19 928.94,-205.19 934.81,-206.44 934.81,-208.94 928.94,-210.19 928.94,-210.19 770.74,-243.91 770.74,-243.91 764.87,-245.16 753.13,-245.16 747.26,-243.91"/>
+<text xml:space="preserve" text-anchor="start" x="713.25" y="-208.24" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Claim destination</text>
+<text xml:space="preserve" text-anchor="start" x="684" y="-199.14" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Chosen by the recipient at claim time</text>
+</g>
+
+<g id="edge2" class="edge">
+<title>dest&#45;&gt;ethereum</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M596.36,-202.41C480.83,-194.52 324.11,-173.8 196,-120.72 170.91,-110.32 146.31,-91.94 128.43,-76.64"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="130.65,-74.63 122.3,-71.26 126.73,-79.1 130.65,-74.63"/>
+<text xml:space="preserve" text-anchor="middle" x="249.9" y="-130.47" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">EVM</text>
+</g>
+
+<g id="edge3" class="edge">
+<title>dest&#45;&gt;optimism</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M652.66,-190.44C581.42,-177.22 486.63,-155.03 408,-120.72 381.43,-109.13 354.18,-91 333.96,-76.12"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="335.76,-73.75 327.17,-71.03 332.19,-78.51 335.76,-73.75"/>
+</g>
+
+<g id="edge4" class="edge">
+<title>dest&#45;&gt;arbitrum</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M715.47,-177.2C672.15,-147.85 606.43,-103.32 565.68,-75.71"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="567.6,-73.42 558.89,-71.11 564.26,-78.34 567.6,-73.42"/>
+</g>
+
+<g id="edge5" class="edge">
+<title>dest&#45;&gt;base</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M759,-167.77C759,-140.72 759,-105.22 759,-80.47"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="761.98,-80.54 759,-72.04 756.03,-80.54 761.98,-80.54"/>
+</g>
+
+<g id="edge6" class="edge">
+<title>dest&#45;&gt;polygon</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M800.77,-176.83C841.81,-147.5 903.69,-103.26 942.16,-75.77"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="943.55,-78.43 948.74,-71.06 940.09,-73.58 943.55,-78.43"/>
+</g>
+
+<g id="edge7" class="edge">
+<title>dest&#45;&gt;solana</title>
+<path fill="none" stroke="#d97706" stroke-width="1.4" d="M855.51,-188.41C923.51,-173.97 1015.97,-151.18 1094,-120.72 1122.47,-109.61 1152.62,-93.69 1176.72,-79.85"/>
+<polygon fill="#d97706" stroke="#d97706" stroke-width="1.4" points="1177.96,-82.57 1183.81,-75.73 1174.96,-77.43 1177.96,-82.57"/>
+<text xml:space="preserve" text-anchor="middle" x="1082.75" y="-130.47" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#d97706">Solana</text>
+</g>
+
+<g id="node8" class="node">
 <title>starknet</title>
-<polygon fill="none" stroke="black" points="458.38,-134.5 377.88,-134.5 377.88,-93.5 458.38,-93.5 458.38,-134.5"/>
-<text xml:space="preserve" text-anchor="middle" x="418.12" y="-117.2" font-family="Times,serif" font-size="14.00">Starknet</text>
-<text xml:space="preserve" text-anchor="middle" x="418.12" y="-100.7" font-family="Times,serif" font-size="14.00">pool payout</text>
+<path fill="#ecfdf5" stroke="#059669" stroke-width="2" d="M1539.71,-73.72C1539.71,-73.72 1390.29,-73.72 1390.29,-73.72 1384.29,-73.72 1378.29,-67.72 1378.29,-61.72 1378.29,-61.72 1378.29,-38 1378.29,-38 1378.29,-32 1384.29,-26 1390.29,-26 1390.29,-26 1539.71,-26 1539.71,-26 1545.71,-26 1551.71,-32 1551.71,-38 1551.71,-38 1551.71,-61.72 1551.71,-61.72 1551.71,-67.72 1545.71,-73.72 1539.71,-73.72"/>
+<text xml:space="preserve" text-anchor="start" x="1442.88" y="-54.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Starknet</text>
+<text xml:space="preserve" text-anchor="start" x="1403.88" y="-45.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Pool payout into an open note</text>
+<text xml:space="preserve" text-anchor="start" x="1394.12" y="-36.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Same chain the run was funded on</text>
 </g>
 
 <g id="edge1" class="edge">
 <title>dest&#45;&gt;starknet</title>
-<path fill="none" stroke="black" d="M525.21,-189.48C508.87,-179 486.46,-164.41 467.12,-151 462.75,-147.96 458.19,-144.72 453.7,-141.48"/>
-<polygon fill="black" stroke="black" points="456.01,-138.83 445.86,-135.77 451.88,-144.49 456.01,-138.83"/>
-</g>
-
-<g id="node3" class="node">
-<title>evm</title>
-<polygon fill="none" stroke="black" points="619.88,-134.5 476.38,-134.5 476.38,-93.5 619.88,-93.5 619.88,-134.5"/>
-<text xml:space="preserve" text-anchor="middle" x="548.12" y="-117.2" font-family="Times,serif" font-size="14.00">EVM</text>
-<text xml:space="preserve" text-anchor="middle" x="548.12" y="-100.7" font-family="Times,serif" font-size="14.00">privacy&#45;bridge cashOut</text>
-</g>
-
-<g id="edge2" class="edge">
-<title>dest&#45;&gt;evm</title>
-<path fill="none" stroke="black" d="M548.12,-186.84C548.12,-175.35 548.12,-159.9 548.12,-146.27"/>
-<polygon fill="black" stroke="black" points="551.63,-146.42 548.13,-136.42 544.63,-146.42 551.63,-146.42"/>
-</g>
-
-<g id="node9" class="node">
-<title>solana</title>
-<polygon fill="none" stroke="black" points="864.12,-151 638.12,-151 638.12,-77 864.12,-77 864.12,-151"/>
-<text xml:space="preserve" text-anchor="middle" x="751.12" y="-133.7" font-family="Times,serif" font-size="14.00">Solana</text>
-<text xml:space="preserve" text-anchor="middle" x="751.12" y="-117.2" font-family="Times,serif" font-size="14.00">NEAR Intents connector implemented</text>
-<text xml:space="preserve" text-anchor="middle" x="751.12" y="-100.7" font-family="Times,serif" font-size="14.00">e2e claim not exercised</text>
-<text xml:space="preserve" text-anchor="middle" x="751.12" y="-84.2" font-family="Times,serif" font-size="14.00">(no testnet; mainnet needs sign&#45;off)</text>
-</g>
-
-<g id="edge3" class="edge">
-<title>dest&#45;&gt;solana</title>
-<path fill="none" stroke="black" d="M578.96,-190.48C600.1,-181.21 629.36,-168.39 657.76,-155.93"/>
-<polygon fill="black" stroke="black" points="659.03,-159.2 666.78,-151.98 656.22,-152.79 659.03,-159.2"/>
-</g>
-
-<g id="node4" class="node">
-<title>ethereum</title>
-<polygon fill="none" stroke="black" points="180.25,-41 0,-41 0,0 180.25,0 180.25,-41"/>
-<text xml:space="preserve" text-anchor="middle" x="90.12" y="-23.7" font-family="Times,serif" font-size="14.00">Ethereum</text>
-<text xml:space="preserve" text-anchor="middle" x="90.12" y="-7.2" font-family="Times,serif" font-size="14.00">mainnet 1 / Sepolia 11155111</text>
-</g>
-
-<g id="edge4" class="edge">
-<title>evm&#45;&gt;ethereum</title>
-<path fill="none" stroke="black" d="M509.42,-93.07C496.3,-87.05 481.35,-80.99 467.12,-77 350.68,-44.33 314.22,-60.06 192.02,-41.38"/>
-<polygon fill="black" stroke="black" points="192.64,-37.93 182.21,-39.83 191.54,-44.85 192.64,-37.93"/>
-</g>
-
-<g id="node5" class="node">
-<title>optimism</title>
-<polygon fill="none" stroke="black" points="405.75,-41 198.5,-41 198.5,0 405.75,0 405.75,-41"/>
-<text xml:space="preserve" text-anchor="middle" x="302.12" y="-23.7" font-family="Times,serif" font-size="14.00">Optimism</text>
-<text xml:space="preserve" text-anchor="middle" x="302.12" y="-7.2" font-family="Times,serif" font-size="14.00">mainnet 10 / OP Sepolia 11155420</text>
-</g>
-
-<g id="edge5" class="edge">
-<title>evm&#45;&gt;optimism</title>
-<path fill="none" stroke="black" d="M505.56,-93.19C493.26,-87.7 479.74,-81.91 467.12,-77 437.91,-65.62 405.27,-54.35 376.79,-44.97"/>
-<polygon fill="black" stroke="black" points="378.12,-41.72 367.53,-41.94 375.95,-48.38 378.12,-41.72"/>
-</g>
-
-<g id="node6" class="node">
-<title>arbitrum</title>
-<polygon fill="none" stroke="black" points="672,-41 424.25,-41 424.25,0 672,0 672,-41"/>
-<text xml:space="preserve" text-anchor="middle" x="548.12" y="-23.7" font-family="Times,serif" font-size="14.00">Arbitrum One</text>
-<text xml:space="preserve" text-anchor="middle" x="548.12" y="-7.2" font-family="Times,serif" font-size="14.00">mainnet 42161 / Arbitrum Sepolia 421614</text>
-</g>
-
-<g id="edge6" class="edge">
-<title>evm&#45;&gt;arbitrum</title>
-<path fill="none" stroke="black" d="M548.12,-93.15C548.12,-81.28 548.12,-65.94 548.12,-52.5"/>
-<polygon fill="black" stroke="black" points="551.63,-52.83 548.13,-42.83 544.63,-52.83 551.63,-52.83"/>
-</g>
-
-<g id="node7" class="node">
-<title>base</title>
-<polygon fill="none" stroke="black" points="900.25,-41 690,-41 690,0 900.25,0 900.25,-41"/>
-<text xml:space="preserve" text-anchor="middle" x="795.12" y="-23.7" font-family="Times,serif" font-size="14.00">Base</text>
-<text xml:space="preserve" text-anchor="middle" x="795.12" y="-7.2" font-family="Times,serif" font-size="14.00">mainnet 8453 / Base Sepolia 84532</text>
-</g>
-
-<g id="edge7" class="edge">
-<title>evm&#45;&gt;base</title>
-<path fill="none" stroke="black" d="M590.68,-93.17C602.99,-87.69 616.5,-81.9 629.12,-77 658.51,-65.59 691.34,-54.31 720,-44.93"/>
-<polygon fill="black" stroke="black" points="720.9,-48.32 729.32,-41.9 718.73,-41.66 720.9,-48.32"/>
-</g>
-
-<g id="node8" class="node">
-<title>polygon</title>
-<polygon fill="none" stroke="black" points="1133.88,-41 918.38,-41 918.38,0 1133.88,0 1133.88,-41"/>
-<text xml:space="preserve" text-anchor="middle" x="1026.12" y="-23.7" font-family="Times,serif" font-size="14.00">Polygon</text>
-<text xml:space="preserve" text-anchor="middle" x="1026.12" y="-7.2" font-family="Times,serif" font-size="14.00">mainnet 137 / Polygon Amoy 80002</text>
-</g>
-
-<g id="edge8" class="edge">
-<title>evm&#45;&gt;polygon</title>
-<path fill="none" stroke="black" d="M586.83,-93.06C599.95,-87.04 614.9,-80.98 629.12,-77 746.52,-44.12 782.95,-58.44 907.02,-41.24"/>
-<polygon fill="black" stroke="black" points="907.19,-44.75 916.6,-39.87 906.2,-37.82 907.19,-44.75"/>
+<path fill="none" stroke="#059669" stroke-width="1.4" d="M930.71,-204.33C1055.93,-197.46 1227.56,-177.17 1368,-120.72 1391.21,-111.39 1414.07,-95.36 1431.76,-81"/>
+<polygon fill="#059669" stroke="#059669" stroke-width="1.4" points="1433.25,-83.64 1437.88,-75.91 1429.44,-79.06 1433.25,-83.64"/>
+<text xml:space="preserve" text-anchor="middle" x="1362.23" y="-130.47" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#059669">same chain</text>
 </g>
 </g>
 </svg>

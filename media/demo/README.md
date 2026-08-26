@@ -1,8 +1,9 @@
 # StableRoll demo video
 
-Remotion composition `Demo` (1920x1080, 30fps). Scenes use the Graphviz
-SVGs from `diagrams/out/` (copied into `public/`) and a real `snforge test`
-capture from `contracts/payroll`.
+Remotion composition `Demo` (1920x1080, 30fps, ~93s). Inter + JetBrains Mono
+via `@remotion/google-fonts`, scene fades via `@remotion/transitions`.
+Diagrams are the LumenWipe-styled Graphviz SVGs from `diagrams/out/`.
+Completeness is a real `snforge test` capture from `contracts/payroll`.
 
 ```bash
 cd media/demo

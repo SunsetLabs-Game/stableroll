@@ -1,57 +1,56 @@
-import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
-import { COLORS, FONTS } from "../theme";
+import { Interactive, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Stage } from "../components/Stage";
+import { mono, sans } from "../fonts";
 
 export type MainnetProofProps = {
   transactions: string[];
 };
 
-const POOL = "0x040337b1af3c663e86e333bab5a4b28da8d4652a15a69beee2b677776ffe812a";
-
 export const MainnetProofScene: React.FC<MainnetProofProps> = ({ transactions }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const opacity = interpolate(frame, [0, 0.8 * fps], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-  });
 
   return (
-    <AbsoluteFill style={{ backgroundColor: COLORS.bg, padding: "100px 80px", opacity }}>
-      <div
+    <Stage>
+      <Interactive.Div
+        name="Headline"
         style={{
-          color: COLORS.text,
-          fontFamily: FONTS.sans,
+          position: "absolute",
+          top: 120,
+          left: 80,
+          color: "#F8FAFC",
+          fontFamily: sans,
           fontSize: 56,
           fontWeight: 700,
+          opacity: interpolate(frame, [0, 0.6 * fps], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          }),
         }}
       >
         Mainnet eligibility transactions
-      </div>
-      <div
+      </Interactive.Div>
+      <Interactive.Div
+        name="Hashes"
         style={{
-          color: COLORS.muted,
-          fontFamily: FONTS.sans,
-          fontSize: 32,
-          marginTop: 16,
-          marginBottom: 40,
+          position: "absolute",
+          top: 240,
+          left: 80,
+          right: 80,
+          color: "#7DD3FC",
+          fontFamily: mono,
+          fontSize: 28,
+          lineHeight: 1.8,
+          opacity: interpolate(frame, [0.4 * fps, 1.1 * fps], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          }),
         }}
       >
-        Hashes from strk20.json, shown as Voyager URLs. Pool {POOL} on SN_MAIN.
-      </div>
-      {transactions.map((hash) => (
-        <div
-          key={hash}
-          style={{
-            color: COLORS.accent,
-            fontFamily: FONTS.mono,
-            fontSize: 28,
-            marginBottom: 18,
-          }}
-        >
-          {`https://voyager.online/tx/${hash}`}
-        </div>
-      ))}
-    </AbsoluteFill>
+        {transactions.map((hash) => (
+          <div key={hash}>{`https://voyager.online/tx/${hash}`}</div>
+        ))}
+      </Interactive.Div>
+    </Stage>
   );
 };
