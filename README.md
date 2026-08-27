@@ -174,9 +174,22 @@ Mainnet tx hashes are omitted until issue #2 fills `strk20.json` `transactions`.
 
 ## Mainnet contracts and transactions
 
-Recorded in [`strk20.json`](strk20.json). Once at least 3 mainnet
-eligibility transactions are banked, each will be explained in
-`docs/mainnet-eligibility.md` (linked here once that file exists).
+Recorded in [`strk20.json`](strk20.json) and explained in
+[`docs/mainnet-eligibility.md`](docs/mainnet-eligibility.md), which also gives
+the route to bank them and the rules that apply.
+
+**None are banked yet** — `strk20.json`'s `transactions` array is empty, so the
+sprint's eligibility floor is not met. That state is machine-checked rather
+than tracked by hand:
+
+```bash
+cd integration && npm run verify:eligibility
+```
+
+It passes only when three distinct hashes are recorded *and* each one is
+confirmed on mainnet as a successful transaction that emitted an event from the
+pool. It is not part of CI — it needs a public RPC and is legitimately red
+until the transactions exist.
 
 ## License
 
