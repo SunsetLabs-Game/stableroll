@@ -28,14 +28,15 @@ import {
  * legitimately red until the transactions are banked — whereas CLAUDE.md §4
  * rule 8 requires the tokenless suite to stay green on a clean checkout.
  *
- * Override the endpoint with MAINNET_RPC_URL if the default rate-limits;
- * `https://rpc.starknet.lava.build` is a working keyless alternative. Note
- * that `starknet-mainnet.public.blastapi.io` no longer serves Starknet at all
- * — it answers every call with "Blast API is no longer available" — so do not
- * reach for it as a fallback.
+ * The default is the RPC the sprint's own Day-0 guide publishes as verified
+ * against the live network. Override with MAINNET_RPC_URL if it rate-limits;
+ * `https://api.cartridge.gg/x/starknet/mainnet` also works keyless. Note that
+ * `starknet-mainnet.public.blastapi.io` no longer serves Starknet at all — it
+ * answers every call with "Blast API is no longer available" — so do not reach
+ * for it as a fallback.
  */
 const RPC_URL =
-  process.env.MAINNET_RPC_URL ?? "https://api.cartridge.gg/x/starknet/mainnet";
+  process.env.MAINNET_RPC_URL ?? "https://rpc.starknet.lava.build";
 
 interface Verdict {
   ok: boolean;

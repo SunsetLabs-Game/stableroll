@@ -13,7 +13,8 @@ else is built. Deadline **31 Aug 2026, 23:59 UTC**.
 
 ## Status
 
-**Not yet banked.** `strk20.json`'s `transactions` array is empty.
+**Met — 3 of 3 banked.** All three verified on mainnet: each exists, succeeded,
+and carries an event emitted by the pool. `npm run verify:eligibility` is green.
 
 Run `cd integration && npm run verify:eligibility` for the current state. It
 goes green only when three distinct hashes are recorded *and* every one of them
@@ -27,9 +28,28 @@ verifier reads it from there, not from this table.
 
 | # | Hash | What it proves | Voyager |
 |---|------|----------------|---------|
-| 1 | `<pending>` | A viewing key is registered on mainnet — the `ViewingKeySet` event. Without this the pool cannot discover notes for this account. | |
-| 2 | `<pending>` | STRK was shielded into the pool — the `Deposit` event. This is the funding side of a payroll run. | |
-| 3 | `<pending>` | A private transfer inside the pool, and a withdrawal back out. This is the claim side: value moves without a public link between the two ends. | |
+| 1 | `0x044b5d46…2110b9` | Viewing key registered **and** STRK shielded, in one transaction: a `ViewingKeySet` and a `Deposit` event, 4 pool events of 17 total. Block 13964885. | [tx](https://voyager.online/tx/0x044b5d46090d34321729e253aea555b10de5f0ae81ff38fce0081048902110b9) |
+| 2 | `0x04fe7d82…e2aa6` | A second shield into the pool — `Deposit`, 3 pool events of 16 total. Block 13965041. | [tx](https://voyager.online/tx/0x04fe7d82f82ecb150f595d4a5b519d8dbeb8761d64e01644193b310019ee2aa6) |
+| 3 | `0x077f3f2f…5c42f` | A third shield into the pool — `Deposit`, 3 pool events of 16 total. Block 13965191. | [tx](https://voyager.online/tx/0x077f3f2fef3675148e41b712ea9ede30e411c6f50a490ba91c6640ae6575c42f) |
+
+All three were performed from a privacy-enabled wallet (Ready) on `SN_MAIN`,
+not through StableRoll's own code. That is what this gate asks for — the Day-0
+guide frames it as proving you can reach the pool "before you write any code" —
+but it is worth stating plainly: **these transactions establish eligibility,
+they do not demonstrate StableRoll.** The `Payroll` contract is not deployed to
+mainnet and `strk20.json`'s `contracts` array is still empty.
+
+Transaction 1 covers Day-0 steps 1 and 2 together: a privacy-enabled wallet
+registers the viewing key automatically on first use, which the STRK20 docs
+describe as "wallets handle registration on first use". The event selectors
+were decoded to confirm this rather than inferred from the event count —
+`0x1321a49…` is `ViewingKeySet`, `0x9149d21…` is `Deposit`.
+
+Transactions 2 and 3 are further shields rather than a private transfer and a
+withdrawal. The eligibility criterion only requires three transactions that
+exist, succeeded, and carry a pool event, and three deposits satisfy it. A
+private spend would have exercised more of the protocol; it is not recorded
+here because it was not done.
 
 ## Which route to use
 
@@ -59,11 +79,14 @@ configuration; there isn't any on this path.
 - **Never commit the viewing key, the private key, or an RPC URL with an
   embedded API key.** Only the resulting public transaction hashes belong in
   this repo.
-- **The 10-block rule** (CLAUDE.md §4 rule 5). Any on-chain state a prover
-  reads — a freshly registered viewing key, a balance topped up a moment ago —
-  must be at least 10 blocks old before the next proof's base block. Chaining
-  these three steps back to back produces proof failures that look exactly like
-  logic bugs. Wait between them.
+- **The 10-block rule** (CLAUDE.md §4 rule 5), but only where proofs are
+  involved. Registering a viewing key and shielding are ordinary public
+  transactions that carry no proof — the Day-0 guide is explicit that "what
+  needs no proof at all: registering a viewing key, and shielding" — so those
+  can be chained without waiting. The rule bites when you *spend* privately:
+  the SDK sets `provingBlockId = currentBlock - 10`, so a note created moments
+  ago cannot be spent yet. Doing so fails in a way that looks exactly like a
+  logic bug.
 
 ## How the verification works
 
@@ -97,8 +120,9 @@ notify's Waku suite stay out), and it is legitimately red until the
 transactions are banked, whereas CLAUDE.md §4 rule 8 requires the tokenless
 suite to stay green on a clean checkout.
 
-The default endpoint is `https://api.cartridge.gg/x/starknet/mainnet`. Override
-it with `MAINNET_RPC_URL` if it rate-limits; `https://rpc.starknet.lava.build`
+The default endpoint is `https://rpc.starknet.lava.build`, which the Day-0
+guide publishes as verified against the live network. Override it with
+`MAINNET_RPC_URL` if it rate-limits; `https://api.cartridge.gg/x/starknet/mainnet`
 also works keyless. Do not reach for
 `starknet-mainnet.public.blastapi.io` — it no longer serves Starknet at all and
 answers every call with "Blast API is no longer available".
