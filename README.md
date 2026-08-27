@@ -53,7 +53,7 @@ This repo is mid-build. Only claim the chains and legs that are real:
 | Solana claim leg (NEAR Intents) | Connector implemented against the real 1-Click API (see `docs/solana-claim-coverage.md`). Route verified live — pinned asset IDs and a dry-run quote are re-checked by `npm run test:liquidity`. The end-to-end claim is **not** exercised: NEAR Intents has no testnet, so it needs mainnet funds and human sign-off |
 | Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Wired from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`) |
 | Cavos payer/recipient UX | Planned — not implemented yet |
-| Mainnet eligibility transactions | Not yet recorded — `strk20.json`'s `transactions` array is currently empty |
+| Mainnet eligibility transactions | Done — 3 recorded in `strk20.json` and verified on-chain (`npm run verify:eligibility`). See `docs/mainnet-eligibility.md`. Eligibility only; `Payroll` is not deployed to mainnet |
 
 Check the repo's GitHub issues for what's actively in progress; treat that
 tracker, not this README, as the up-to-date source of truth on scope.
@@ -174,9 +174,23 @@ Mainnet tx hashes are omitted until issue #2 fills `strk20.json` `transactions`.
 
 ## Mainnet contracts and transactions
 
-Recorded in [`strk20.json`](strk20.json). Once at least 3 mainnet
-eligibility transactions are banked, each will be explained in
-`docs/mainnet-eligibility.md` (linked here once that file exists).
+Recorded in [`strk20.json`](strk20.json) and explained in
+[`docs/mainnet-eligibility.md`](docs/mainnet-eligibility.md), which also gives
+the route to bank them and the rules that apply.
+
+**The eligibility floor is met**: three mainnet transactions are recorded, each
+verified on-chain as successful and carrying an event from the pool. They
+establish eligibility only — they were made from a privacy-enabled wallet, not
+through StableRoll, and the `Payroll` contract is not yet deployed to mainnet.
+That state is machine-checked rather than tracked by hand:
+
+```bash
+cd integration && npm run verify:eligibility
+```
+
+It passes only when three distinct hashes are recorded *and* each one is
+confirmed on mainnet as a successful transaction that emitted an event from the
+pool. It is not part of CI — it needs a public RPC this repo does not control.
 
 ## License
 
