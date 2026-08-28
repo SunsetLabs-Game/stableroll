@@ -52,7 +52,8 @@ This repo is mid-build. Only claim the chains and legs that are real:
 | EVM claim leg (privacy-bridge) | Wired against the real API (`cashOut`, see `docs/evm-claim-coverage.md`). Not yet exercised against live testnet infrastructure |
 | Solana claim leg (NEAR Intents) | Connector implemented against the real 1-Click API (see `docs/solana-claim-coverage.md`). Route verified live — pinned asset IDs and a dry-run quote are re-checked by `npm run test:liquidity`. The end-to-end claim is **not** exercised: NEAR Intents has no testnet, so it needs mainnet funds and human sign-off |
 | Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Wired from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`) |
-| Cavos payer/recipient UX | Planned — not implemented yet |
+| Frontend app shell (`frontend/`) | Done — placeholder `/admin` and `/claim/[secret]` routes, zero business logic |
+| Cavos payer/recipient UX | Planned — not implemented yet (see issue #8) |
 | Mainnet eligibility transactions | Done — 3 recorded in `strk20.json` and verified on-chain (`npm run verify:eligibility`). See `docs/mainnet-eligibility.md`. Eligibility only; `Payroll` is not deployed to mainnet |
 
 Check the repo's GitHub issues for what's actively in progress; treat that
@@ -85,7 +86,9 @@ claim-routing tree live in [`ARCHITECTURE.md`](ARCHITECTURE.md).
   quote → deposit-notify → poll, against NEAR Intents' 1-Click API. It sits
   downstream of a Starknet claim and never touches custody or the
   privacy-critical accounting above.
-- The Cavos UX layer is a separate, not-yet-built component.
+- **`frontend`** — Next.js app shell with placeholder `/admin` and
+  `/claim/[secret]` routes, zero business logic. The Cavos UX layer that
+  fills them in is a separate, not-yet-built component (issue #8).
 
 ## Dependency transparency
 
@@ -144,6 +147,16 @@ npm run generate               # writes diagrams/out/<name>.{dot,svg}
 
 CI fails the PR if a typed spec changed without regenerating the committed
 `.dot` files. See [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+### Frontend — app shell
+
+```bash
+cd frontend
+npm install
+npm run dev   # serves /admin and /claim/[secret], no credentials needed
+```
+
+Placeholder routes only — no Cavos or wallet integration yet (see issue #8).
 
 ### TypeScript — full suite (needs a GitHub Packages token)
 
