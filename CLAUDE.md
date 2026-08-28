@@ -233,7 +233,11 @@ copying the other's new value without understanding which side drifted.
 - `RunInfo` stores **no payer address** — deliberately. The pool is always the
   caller, so it could only ever record the pool; recording the real payer would
   publish the link the pool exists to hide.
-
-Run-level authorization is a **known open hole**: anyone routing through the pool
-can open a run id or fund into someone else's run. See the tracker issue before
-building anything that assumes run ownership.
+- Run ownership is proven with a secret, never an address: `OpenRun` requires
+  `run_id == compute_run_id(owner_secret)`, and every `FundCommitment` must
+  reveal that same `owner_secret` against the run's stored `owner_commitment`.
+  This closes both the `run_id`-squatting and third-party-funding holes — see
+  `docs/adr-run-ownership.md` for the design reasoning, the alternatives
+  considered, and the one documented residual (an attacker who front-runs a
+  pending `FundCommitment` after `owner_secret` first becomes public calldata;
+  narrower than the original hole, not eliminated).

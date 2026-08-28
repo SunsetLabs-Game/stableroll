@@ -41,6 +41,10 @@ The completeness guarantee (`is_complete`) is a public, verifiable property —
 that a run was funded exactly as promised and every promised recipient was
 paid — without revealing who those recipients are.
 
+Every row above is mapped to its real source (contract fields, tests) in
+[`docs/verification-guide.md`](docs/verification-guide.md) — check that
+before taking this table's word for it.
+
 ## What actually works today
 
 This repo is mid-build. Only claim the chains and legs that are real:
@@ -164,6 +168,10 @@ If you hit a build/toolchain error, check `CLAUDE.md` §3 first — its
 error-to-cause map covers every trap this repo's toolchain has actually
 produced, and the fix is almost never what the error text suggests.
 
+Every command above, plus each suite's current pass count, is pinned in
+[`docs/verification-guide.md`](docs/verification-guide.md) — if a command
+here and that guide disagree, trust what the command actually prints.
+
 ## Demo video
 
 A ~93-second product demo (Remotion composition `Demo` at `media/demo/`) is
@@ -171,12 +179,17 @@ recorded in [`strk20.json`](strk20.json) `demo_video` and hosted as a
 [GitHub Release asset](https://github.com/SunsetLabs-Game/stableroll/releases/download/demo-video/demo.mp4).
 It uses the generated architecture SVGs and a real `snforge test` capture.
 Mainnet tx hashes are omitted until issue #2 fills `strk20.json` `transactions`.
+Every claim it makes also has its own row in
+[`docs/verification-guide.md`](docs/verification-guide.md) — the video is a
+fast path through that guide, not a substitute source of truth for it.
 
 ## Mainnet contracts and transactions
 
 Recorded in [`strk20.json`](strk20.json) and explained in
 [`docs/mainnet-eligibility.md`](docs/mainnet-eligibility.md), which also gives
-the route to bank them and the rules that apply.
+the route to bank them and the rules that apply. Each hash is also listed in
+[`docs/verification-guide.md`](docs/verification-guide.md)'s mainnet-transactions
+table, alongside the specific claim it substantiates.
 
 **The eligibility floor is met**: three mainnet transactions are recorded, each
 verified on-chain as successful and carrying an event from the pool. They
