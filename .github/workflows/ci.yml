@@ -129,3 +129,18 @@ jobs:
           test -s out/architecture.svg
           test -s out/state-machine.svg
           test -s out/claim-routing.svg
+
+  frontend:
+    name: Frontend (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run build
