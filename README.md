@@ -53,7 +53,7 @@ This repo is mid-build. Only claim the chains and legs that are real:
 | Solana claim leg (NEAR Intents) | Connector implemented against the real 1-Click API (see `docs/solana-claim-coverage.md`). Route verified live — pinned asset IDs and a dry-run quote are re-checked by `npm run test:liquidity`. The end-to-end claim is **not** exercised: NEAR Intents has no testnet, so it needs mainnet funds and human sign-off |
 | Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Wired from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`) |
 | Frontend app shell (`frontend/`) | Done — placeholder `/admin` and `/claim/[secret]` routes, zero business logic |
-| Cavos payer/recipient UX | Planned — not implemented yet (see issue #8) |
+| Cavos payer/recipient UX | Partial — sign-in wired against the real `@cavos/kit` v0.1.11 API on `/admin` and `/claim/[secret]`, dual-approval gate implemented and unit-tested. Submission is **not** wired: `privacy_invoke` accepts only the pool as caller, and that path needs a mainnet proving service that is not published. Waku pending-claim discovery not yet read by the page |
 | Mainnet eligibility transactions | Done — 3 recorded in `strk20.json` and verified on-chain (`npm run verify:eligibility`). See `docs/mainnet-eligibility.md`. Eligibility only; `Payroll` is not deployed to mainnet |
 
 Check the repo's GitHub issues for what's actively in progress; treat that
@@ -86,16 +86,18 @@ claim-routing tree live in [`ARCHITECTURE.md`](ARCHITECTURE.md).
   quote → deposit-notify → poll, against NEAR Intents' 1-Click API. It sits
   downstream of a Starknet claim and never touches custody or the
   privacy-critical accounting above.
-- **`frontend`** — Next.js app shell with placeholder `/admin` and
-  `/claim/[secret]` routes, zero business logic. The Cavos UX layer that
-  fills them in is a separate, not-yet-built component (issue #8).
+- **`frontend`** — Next.js app with `/admin` and `/claim/[secret]`. Cavos
+  provides seed-phrase-free sign-in on the Starknet side only; EVM and Solana
+  recipients never see it. The dual-approval gate lives in `src/lib/quorum.ts`
+  and is where the separation-of-duties guarantee is enforced today — in the
+  UI, not on-chain, for reasons that module documents.
 
 ## Dependency transparency
 
 | Dependency | Role | License |
 |---|---|---|
 | [STRK20 Privacy Pool][strk20-pool], Escrow pattern, Privacy Bridge | Core privacy primitive this repo builds on (StarkWare) | Apache-2.0 |
-| [Cavos](https://github.com/cavos-labs) | Starknet-side payer/recipient UX only — never custody, never a cross-chain leg | Most Cavos repositories carry **no declared license**; only `docs` and `cavos-account` are MIT. Treat the rest as all-rights-reserved until StarkWare/Cavos states otherwise. |
+| [Cavos](https://github.com/cavos-labs) | Starknet-side payer/recipient UX only — never custody, never a cross-chain leg | Verified directly: `cavos-account` is MIT (`LICENSE` in-repo) and `@cavos/kit` v0.1.11 declares MIT in its npm metadata — those two are what this repo depends on. Most other Cavos repositories carry **no declared license**; treat them as all-rights-reserved until Cavos states otherwise. |
 | [Waku](https://waku.org) | Recipient notification transport only — no custody, no privacy-critical logic depends on it | Apache-2.0 / MIT (dual, per Waku project) |
 
 ## Local setup
@@ -156,7 +158,11 @@ npm install
 npm run dev   # serves /admin and /claim/[secret], no credentials needed
 ```
 
-Placeholder routes only — no Cavos or wallet integration yet (see issue #8).
+Cavos sign-in is wired on `/admin` and `/claim/[secret]`, behind the
+dual-approval gate. Both pages render a labelled unconfigured state without
+`NEXT_PUBLIC_CAVOS_APP_ID` and `NEXT_PUBLIC_CAVOS_APP_SALT`, so `npm run dev`
+and CI work with zero credentials. Submitting a run is deliberately inert —
+see `src/lib/payroll-call.ts` for why.
 
 ### TypeScript — full suite (needs a GitHub Packages token)
 
