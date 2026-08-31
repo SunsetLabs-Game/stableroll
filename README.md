@@ -1,6 +1,8 @@
 # StableRoll
 
-Cross-chain private payroll on Starknet. A company funds a payroll run once,
+Cross-chain private payroll on Starknet. 
+
+A company funds a payroll run once,
 on Starknet, using the [STRK20 privacy pool][strk20-pool]. Recipients claim
 into a wallet on Starknet, an EVM chain, or Solana, with no on-chain link
 between payer and recipient, and no centralized service holding the payment
