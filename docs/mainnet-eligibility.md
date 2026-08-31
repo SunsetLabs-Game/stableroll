@@ -36,8 +36,28 @@ All three were performed from a privacy-enabled wallet (Ready) on `SN_MAIN`,
 not through StableRoll's own code. That is what this gate asks for — the Day-0
 guide frames it as proving you can reach the pool "before you write any code" —
 but it is worth stating plainly: **these transactions establish eligibility,
-they do not demonstrate StableRoll.** The `Payroll` contract is not deployed to
-mainnet and `strk20.json`'s `contracts` array is still empty.
+they do not demonstrate StableRoll.**
+
+## Payroll contract (mainnet)
+
+`Payroll` is declared and deployed on `SN_MAIN`, constructor arg
+`privacy_contract` set to the pool address above.
+
+| | |
+|---|---|
+| Contract address | [`0x024e205271b683ee0a4a07f142c4c5cdef4c12a7e46af65c30e45d76ee6741d1`](https://voyager.online/contract/0x024e205271b683ee0a4a07f142c4c5cdef4c12a7e46af65c30e45d76ee6741d1) |
+| Class hash | [`0x04adc544ccaba9ceb2b0eb30fd913279bdfead4edc16d39c5fb7ff546f9ca76e`](https://voyager.online/class/0x04adc544ccaba9ceb2b0eb30fd913279bdfead4edc16d39c5fb7ff546f9ca76e) |
+| Declare tx | [`0x04ba3604a438b02980d4be1a5989114de85267be80055941bbd3fcba7342320f`](https://voyager.online/tx/0x04ba3604a438b02980d4be1a5989114de85267be80055941bbd3fcba7342320f) |
+| Deploy tx | [`0x029a910042ae818318f13669de0a964ef5fb048e01b6fc341c4811dc74ed51d5`](https://voyager.online/tx/0x029a910042ae818318f13669de0a964ef5fb048e01b6fc341c4811dc74ed51d5) |
+
+Both transactions confirmed `ACCEPTED_ON_L2` / `SUCCEEDED`. `starknet_getClassHashAt`
+on the deployed address returns the declared class hash, confirming the
+instance is live and running the right code. Recorded in `strk20.json`'s
+`contracts` array.
+
+This deploys the contract; it does not run a payroll through it. Submitting a
+real run is separate (blocked on the mainnet proving path, see issue #34) and
+should not be read as demonstrated by this entry alone.
 
 Transaction 1 covers Day-0 steps 1 and 2 together: a privacy-enabled wallet
 registers the viewing key automatically on first use, which the STRK20 docs
