@@ -60,7 +60,8 @@ This repo is mid-build. Only claim the chains and legs that are real:
 | Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Wired from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`) |
 | Frontend app shell (`frontend/`) | Done — placeholder `/admin` and `/claim/[secret]` routes, zero business logic |
 | Cavos payer/recipient UX | Partial — sign-in wired against the real `@cavos/kit` v0.1.11 API on `/admin` and `/claim/[secret]`, dual-approval gate implemented and unit-tested. Submission is **not** wired: `privacy_invoke` accepts only the pool as caller, and that path needs a mainnet proving service that is not published. Waku pending-claim discovery not yet read by the page |
-| Mainnet eligibility transactions | Done — 3 recorded in `strk20.json` and verified on-chain (`npm run verify:eligibility`). See `docs/mainnet-eligibility.md`. Eligibility only; `Payroll` is not deployed to mainnet |
+| Mainnet eligibility transactions | Done — 3 recorded in `strk20.json` and verified on-chain (`npm run verify:eligibility`). See `docs/mainnet-eligibility.md` |
+| `Payroll` mainnet deployment | Done — declared and deployed to `SN_MAIN`, address recorded in `strk20.json`. See `docs/mainnet-eligibility.md`. Deployed only; no run has been submitted through it yet — see issue #34 |
 
 Check the repo's GitHub issues for what's actively in progress; treat that
 tracker, not this README, as the up-to-date source of truth on scope.
@@ -140,6 +141,8 @@ npm run test:offline   # deterministic derivation tests, no network
 npm test               # full suite — talks to the live Waku test fleet, no credentials needed
 ```
 
+No environment variables — see [`notify/.env.example`](notify/.env.example).
+
 ### Diagrams: regenerate the committed SVGs
 
 Requires [Graphviz](https://graphviz.org) (`dot` on `PATH`). It is a local
@@ -168,7 +171,9 @@ Cavos sign-in is wired on `/admin` and `/claim/[secret]`, behind the
 dual-approval gate. Both pages render a labelled unconfigured state without
 `NEXT_PUBLIC_CAVOS_APP_ID` and `NEXT_PUBLIC_CAVOS_APP_SALT`, so `npm run dev`
 and CI work with zero credentials. Submitting a run is deliberately inert —
-see `src/lib/payroll-call.ts` for why.
+see `src/lib/payroll-call.ts` for why. See
+[`frontend/.env.example`](frontend/.env.example) for every variable; copy it
+to `.env.local` to configure Cavos.
 
 ### TypeScript — full suite (needs a GitHub Packages token)
 
@@ -179,6 +184,7 @@ without a token — only the SDK-dependent tests are skipped/fail without one.
 ```bash
 npm config set //npm.pkg.github.com/:_authToken <TOKEN>   # needs read:packages
 cd integration
+cp .env.example .env   # fill in — see integration/.env.example for what each var is and where it comes from
 npm test
 ```
 

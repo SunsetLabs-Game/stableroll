@@ -2,6 +2,7 @@ use payroll::payroll::{
     IPayrollDispatcher, IPayrollDispatcherTrait, PayrollOperation, RunInfo, compute_commitment_hash,
     compute_run_id, compute_run_owner_commitment,
 };
+use privacy::objects::OpenNoteDeposit;
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address, start_mock_call,
 };
@@ -394,5 +395,170 @@ fn test_run_owner_commitment_hash_matches_typescript() {
         1457531891617558283633604771381914416639085145906137038567439060842776331852;
     assert(
         compute_run_owner_commitment('OWNER-1') == expected, 'TS/Cairo owner hash drift',
+    );
+}
+
+#[test]
+#[should_panic(expected: 'RUN_EXISTS')]
+fn test_open_run_rejects_run_id_opened_twice() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-DUPRUN';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    // Same run_id, same owner_secret: expected_count is already non-zero, so
+    // this must be rejected rather than silently overwriting the run.
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+}
+
+#[test]
+#[should_panic(expected: 'RUN_NOT_FOUND')]
+fn test_fund_commitment_rejects_run_that_was_never_opened() {
+    let (dispatcher, token) = setup();
+    // No OpenRun for this run_id: expected_count reads back 0.
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            'NEVER-OPENED',
+            compute_commitment_hash('SECRET-NOPE'),
+            token,
+            100_u128,
+            0,
+            'ANY-SECRET',
+            0,
+        );
+}
+
+#[test]
+#[should_panic(expected: 'COMMITMENT_EXISTS')]
+fn test_fund_commitment_rejects_the_same_hash_twice() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-DUPHASH';
+    let run_id = compute_run_id(owner_secret);
+    let hash_a = compute_commitment_hash('SECRET-DUPHASH');
+
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 200_u128, 2, owner_secret, 0);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash_a, token, 100_u128, 0, owner_secret, 0,
+        );
+    // Same commitment_hash again: the entry already has a non-zero token, so a
+    // second funding of it must not be allowed to double the recipient's payout.
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash_a, token, 50_u128, 0, owner_secret, 0,
+        );
+}
+
+#[test]
+#[should_panic(expected: 'OVER_COMMITTED')]
+fn test_fund_commitment_rejects_amount_over_expected_total() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-OVER';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    // Promised 100 total; this single commitment alone claims 150.
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-OVER'),
+            token,
+            150_u128,
+            0,
+            owner_secret,
+            0,
+        );
+}
+
+#[test]
+#[should_panic(expected: 'ZERO_TOKEN')]
+fn test_open_run_rejects_zero_token() {
+    let (dispatcher, _token) = setup();
+    let owner_secret: felt252 = 'OWNER-ZTOK';
+    let run_id = compute_run_id(owner_secret);
+    let zero_token: ContractAddress = 0.try_into().unwrap();
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun, run_id, 0, zero_token, 100_u128, 1, owner_secret, 0,
+        );
+}
+
+#[test]
+#[should_panic(expected: 'ZERO_AMOUNT')]
+fn test_fund_commitment_rejects_zero_amount() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-ZAMT';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-ZAMT'),
+            token,
+            0_u128,
+            0,
+            owner_secret,
+            0,
+        );
+}
+
+#[test]
+#[should_panic(expected: 'ZERO_COMMITMENT_HASH')]
+fn test_fund_commitment_rejects_zero_commitment_hash() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-ZHASH';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, 0, token, 100_u128, 0, owner_secret, 0,
+        );
+}
+
+/// Guards against the silent-failure shape in CLAUDE.md §3: if Claim ever
+/// returned the wrong note_id, token, or amount, the recipient's note would be
+/// minted with the wrong value and every other test would stay green. This
+/// pins the full returned struct, so mutating any one field (e.g. returning
+/// `entry.amount` as 0) turns this test red.
+#[test]
+fn test_claim_returns_the_commitments_real_deposit() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-RETVAL';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-RETVAL'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        );
+    let deposits = dispatcher
+        .privacy_invoke(
+            PayrollOperation::Claim, run_id, 0, token, 0, 0, 'SECRET-RETVAL', 'NOTE-RETVAL',
+        );
+
+    assert(deposits.len() == 1, 'exactly one deposit');
+    assert(
+        *deposits.at(0) == OpenNoteDeposit { note_id: 'NOTE-RETVAL', token, amount: 100_u128 },
+        'deposit must match commitment',
     );
 }
