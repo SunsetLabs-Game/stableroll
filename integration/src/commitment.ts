@@ -27,10 +27,12 @@ import { hash, shortString } from "starknet";
 export const PAYROLL_COMMITMENT_TAG = "PAYROLL_COMMITMENT_TAG:V1";
 export const PAYROLL_RUN_ID_TAG = "PAYROLL_RUN_ID_TAG:V1";
 export const PAYROLL_RUN_OWNER_TAG = "PAYROLL_RUN_OWNER_TAG:V1";
+export const PAYROLL_APPROVER_TAG = "PAYROLL_APPROVER_TAG:V1";
 
 const PAYROLL_COMMITMENT_TAG_FELT = shortString.encodeShortString(PAYROLL_COMMITMENT_TAG);
 const PAYROLL_RUN_ID_TAG_FELT = shortString.encodeShortString(PAYROLL_RUN_ID_TAG);
 const PAYROLL_RUN_OWNER_TAG_FELT = shortString.encodeShortString(PAYROLL_RUN_OWNER_TAG);
+const PAYROLL_APPROVER_TAG_FELT = shortString.encodeShortString(PAYROLL_APPROVER_TAG);
 
 function poseidonTagged(tagFelt: string, secret: bigint | string): bigint {
   const secretFelt = typeof secret === "string" ? shortString.encodeShortString(secret) : secret;
@@ -61,4 +63,25 @@ export function computeRunId(ownerSecret: bigint | string): bigint {
  */
 export function computeRunOwnerCommitment(ownerSecret: bigint | string): bigint {
   return poseidonTagged(PAYROLL_RUN_OWNER_TAG_FELT, ownerSecret);
+}
+
+/**
+ * Mirrors `compute_approver_commitment` in payroll.cairo (issue #31).
+ *
+ * An approver generates their own secret, keeps it, and hands the payer only
+ * this hash. `OpenRun` fixes two of them; `ApproveRun` reveals a secret and the
+ * contract matches it against one of the two. Identity is the preimage, never
+ * an address — `RunInfo` stores no addresses, and approvers must not become the
+ * exception that reintroduces the link the pool exists to hide.
+ *
+ * Its own domain tag, so the same secret used as an owner secret and as an
+ * approver secret yields unrelated values and one role never satisfies another.
+ *
+ * Use a FRESH secret per run. `ApproveRun` puts the secret in public calldata,
+ * so an approver who reuses one across runs has no security left on the second:
+ * anyone who read the first run's calldata can fill that approver's slot. See
+ * docs/adr-dual-approval-quorum.md, "Residual risk".
+ */
+export function computeApproverCommitment(approverSecret: bigint | string): bigint {
+  return poseidonTagged(PAYROLL_APPROVER_TAG_FELT, approverSecret);
 }

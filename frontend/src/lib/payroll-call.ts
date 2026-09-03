@@ -18,6 +18,8 @@ import { num } from "starknet";
 export const PAYROLL_OPERATION_OPEN_RUN = 0n;
 export const PAYROLL_OPERATION_FUND_COMMITMENT = 1n;
 export const PAYROLL_OPERATION_CLAIM = 2n;
+/** Appended after Claim in the Cairo enum, so 0/1/2 are unchanged (issue #31). */
+export const PAYROLL_OPERATION_APPROVE_RUN = 3n;
 
 /** `ChainCall` as `@cavos/kit` v0.1.11 declares it (dist/ChainAdapter-*.d.ts). */
 export interface ChainCall {
@@ -48,7 +50,12 @@ function privacyInvokeCalldata(params: {
   ];
 }
 
-/** `OpenRun`: `amount` carries expected_total, `secret` is the run's owner_secret. */
+/**
+ * `OpenRun`: `amount` carries expected_total and `secret` is the run's
+ * owner_secret. Since issue #31 `commitment_hash` and `note_id` carry the two
+ * approver commitments — hashes the approvers hand over, never their secrets.
+ * They must be non-zero and distinct or the call reverts.
+ */
 export function buildOpenRunCall(params: {
   payrollAddress: string;
   runId: bigint;
@@ -56,6 +63,8 @@ export function buildOpenRunCall(params: {
   expectedTotal: bigint;
   expectedCount: bigint;
   ownerSecret: bigint;
+  approverACommitment: bigint;
+  approverBCommitment: bigint;
 }): ChainCall {
   return {
     contractAddress: params.payrollAddress,
@@ -63,17 +72,48 @@ export function buildOpenRunCall(params: {
     calldata: privacyInvokeCalldata({
       operation: PAYROLL_OPERATION_OPEN_RUN,
       runId: params.runId,
-      commitmentHash: 0n,
+      commitmentHash: params.approverACommitment,
       token: params.token,
       amount: params.expectedTotal,
       expectedCount: params.expectedCount,
       secret: params.ownerSecret,
+      noteId: params.approverBCommitment,
+    }),
+  };
+}
+
+/**
+ * `ApproveRun`: one approver reveals the secret behind a commitment fixed at
+ * `OpenRun`. Both approvers must do this before `FundCommitment` is accepted.
+ */
+export function buildApproveRunCall(params: {
+  payrollAddress: string;
+  runId: bigint;
+  token: string;
+  approverSecret: bigint;
+}): ChainCall {
+  return {
+    contractAddress: params.payrollAddress,
+    entrypoint: "privacy_invoke",
+    calldata: privacyInvokeCalldata({
+      operation: PAYROLL_OPERATION_APPROVE_RUN,
+      runId: params.runId,
+      commitmentHash: 0n,
+      token: params.token,
+      amount: 0n,
+      expectedCount: 0n,
+      secret: params.approverSecret,
       noteId: 0n,
     }),
   };
 }
 
-/** `FundCommitment`: gated by the dual-approval quorum before it may be built. */
+/**
+ * `FundCommitment`: gated by the dual-approval quorum. The gate that matters is
+ * now in `Payroll` itself — this call reverts `QUORUM_NOT_MET` unless both
+ * `ApproveRun` calls have landed, whoever builds it. `quorum.ts` still gates the
+ * UI so the user sees the problem before paying for a proof.
+ */
 export function buildFundCommitmentCall(params: {
   payrollAddress: string;
   runId: bigint;

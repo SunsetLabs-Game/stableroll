@@ -8,8 +8,16 @@ import {
 } from "payroll-notify/send-claim-notification.js";
 import { buildClaimNotificationPayload } from "./claim-notification-payload.js";
 import { SEPOLIA_CONFIG, getTransfers } from "./config.js";
-import { computeCommitmentHash, computeRunId } from "./commitment.js";
-import { buildFundCommitmentCall, buildOpenRunCall } from "./payroll-invoke.js";
+import {
+  computeApproverCommitment,
+  computeCommitmentHash,
+  computeRunId,
+} from "./commitment.js";
+import {
+  buildApproveRunCall,
+  buildFundCommitmentCall,
+  buildOpenRunCall,
+} from "./payroll-invoke.js";
 import { receiptBlockNumber, submitPrivateCall, waitForMaturity } from "./submit.js";
 
 /** 128-bit non-zero felt, unique per test run so two claims cannot squat the same run_id. */
@@ -36,7 +44,15 @@ export function asBool(value: unknown): boolean {
  * escrow pattern: FundCommitment does not transferFrom; Claim later approves
  * the pool to pull from Payroll into an open note.
  *
- * Waits the 10-block maturity window after each private tx.
+ * Waits the 10-block maturity window after each private tx. Since issue #31
+ * that is four private transactions rather than two: OpenRun, two ApproveRun
+ * calls satisfying the on-chain quorum, then FundCommitment.
+ *
+ * Both approver secrets are generated here because this helper drives the whole
+ * run from one account. That exercises the contract's rule — two *distinct*
+ * secrets — but it is not separation of duties by itself: the contract can
+ * enforce that two different secrets were revealed, never that two different
+ * people hold them. See docs/adr-dual-approval-quorum.md.
  *
  * After a successful FundCommitment, sends a Waku claim notification unless
  * `notify` is false. Claim-path tests pass `notify: false` so they do not
@@ -48,9 +64,17 @@ export async function openAndFundSingleCommitment(params: {
   amount: bigint;
   ownerSecret: bigint;
   commitmentSecret: bigint;
+  /** Defaults to fresh random secrets. Must differ, or OpenRun reverts. */
+  approverASecret?: bigint;
+  approverBSecret?: bigint;
   notify?: boolean;
 }) {
   const sendNotification = params.notify !== false;
+  const approverASecret = params.approverASecret ?? newFeltSecret();
+  const approverBSecret = params.approverBSecret ?? newFeltSecret();
+  if (approverASecret === approverBSecret) {
+    throw new Error("approver secrets must differ; OpenRun reverts APPROVERS_NOT_DISTINCT");
+  }
   const transfers = await getTransfers(params.payer);
   const runId = computeRunId(params.ownerSecret);
   const commitmentHash = computeCommitmentHash(params.commitmentSecret);
@@ -72,12 +96,28 @@ export async function openAndFundSingleCommitment(params: {
         expectedTotal: params.amount,
         expectedCount: 1n,
         ownerSecret: params.ownerSecret,
+        approverACommitment: computeApproverCommitment(approverASecret),
+        approverBCommitment: computeApproverCommitment(approverBSecret),
       }),
     )
     .surplusTo(params.payer.address)
     .execute();
   const openSubmit = await submitPrivateCall(params.payer, opened.callAndProof);
   await waitForMaturity(receiptBlockNumber(openSubmit.receipt));
+
+  // The quorum, on-chain. FundCommitment below reverts QUORUM_NOT_MET until
+  // both of these land, however valid the owner secret is.
+  for (const approverSecret of [approverASecret, approverBSecret]) {
+    const approved = await transfers
+      .build({ autoDiscover: { notes: "refresh", channels: "refresh" } })
+      .invoke((_args: InvokeCalldataBuilderArgs) =>
+        buildApproveRunCall({ payrollAddress, runId, token, approverSecret }),
+      )
+      .surplusTo(params.payer.address)
+      .execute();
+    const approveSubmit = await submitPrivateCall(params.payer, approved.callAndProof);
+    await waitForMaturity(receiptBlockNumber(approveSubmit.receipt));
+  }
 
   const funded = await transfers
     .build({ autoDiscover: { notes: "refresh", channels: "refresh" } })

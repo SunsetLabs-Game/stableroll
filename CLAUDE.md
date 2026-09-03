@@ -241,3 +241,12 @@ copying the other's new value without understanding which side drifted.
   considered, and the one documented residual (an attacker who front-runs a
   pending `FundCommitment` after `owner_secret` first becomes public calldata;
   narrower than the original hole, not eliminated).
+- Funding requires an on-chain dual-approval quorum. `OpenRun` fixes two
+  distinct approver commitments; each approver reveals their secret via
+  `ApproveRun`; `FundCommitment` reverts `QUORUM_NOT_MET` until both have
+  landed. Approvers are commitments, never addresses — same reason as the payer.
+  What this proves is that **two distinct secrets** were revealed, not that two
+  distinct *people* hold them; do not overclaim it. See
+  `docs/adr-dual-approval-quorum.md`, including the residual that an approver
+  reusing a secret across runs has no security left once the first reveal is
+  public calldata.

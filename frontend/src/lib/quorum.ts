@@ -1,34 +1,44 @@
 /**
- * Dual-approval gate for payroll funding (issue #8).
+ * Dual-approval gate for payroll funding — the UI half.
  *
  * Separation of duties: two *distinct* approvers must sign off before any
  * `FundCommitment` is submitted. One person cannot fund a payroll run alone,
  * however many times they click.
  *
- * ## Why this is enforced here and not on-chain
+ * ## Where the real enforcement lives
  *
- * The issue asked to prefer an on-chain session-key quorum "if the real Cavos
- * API supports it". It does not. `cavos-labs/cavos-account` scopes a session
- * key with `SpendingPolicy { token, limit }`, `SessionTimeLimits
- * { valid_after, valid_until, registered_at }` and an
- * `allowed_contracts_root` — all per *individual* session key, each bound to
- * one OAuth identity. A search of that contract for
- * `quorum|multisig|threshold|approver|m_of_n` returns nothing, and `@cavos/kit`
- * v0.1.11's `addSigner`/`removeSigner`/`listDevices` manage device signers on a
- * single wallet, not multi-party approval. There is no M-of-N primitive to
- * build on.
+ * In the contract, since issue #31. `Payroll` fixes two approver commitments at
+ * `OpenRun`, requires an `ApproveRun` revealing each approver's secret, and
+ * reverts `QUORUM_NOT_MET` on any `FundCommitment` attempted before both have
+ * landed — including calls routed straight through the privacy pool that never
+ * load this UI. `contracts/payroll/src/tests.cairo` proves it: deleting the
+ * quorum assert turns four tests red, among them
+ * `test_same_approver_twice_does_not_satisfy_quorum`.
  *
- * So this is the off-chain tracker the issue names as the default. Be honest
- * about what that means: it binds the UI, not the chain. Anyone who talks to
- * the pool directly bypasses it. The materially stronger option is to enforce
- * the quorum inside `Payroll` itself — it already proves run ownership with
- * `owner_commitment`, and a second approver commitment would make this a Cairo
- * invariant with a test that goes red. That is a contract change, tracked
- * separately, not something this module can pretend to provide.
+ * That was not always true. This module originally *was* the gate, because the
+ * issue-#8 reading step established Cavos has no M-of-N primitive to build on:
+ * `cavos-labs/cavos-account` scopes a session key with `SpendingPolicy`,
+ * `SessionTimeLimits` and an `allowed_contracts_root`, all per individual key
+ * bound to one OAuth identity, and `@cavos/kit` v0.1.11's `addSigner` /
+ * `removeSigner` / `listDevices` manage device signers on a single wallet.
+ * Grepping that contract for `quorum|multisig|threshold|approver|m_of_n` still
+ * returns nothing. The quorum moved into `Payroll` instead.
  *
- * What this module *does* guarantee is that approvals are cryptographic rather
- * than a click: each approver signs a message naming the run, and identity is
- * the signing wallet address. Two approvals from one address stay one approval.
+ * ## So why keep this module
+ *
+ * It is a UX gate, not a security boundary. It fails the run early and locally,
+ * before the user pays for a proof and waits on a transaction that would revert
+ * `QUORUM_NOT_MET` anyway. It also tracks a different identity than the chain
+ * does — a signing wallet address here, a commitment preimage there — so the
+ * two are complementary rather than redundant:
+ *
+ * - This module answers "have two people in this browser session signed off?"
+ * - The contract answers "were two distinct registered secrets revealed
+ *   on-chain?" — the one that binds everyone.
+ *
+ * Neither can prove two different *people* hold the two approver secrets. The
+ * contract enforces the mechanism; key custody is an organizational control.
+ * See `docs/adr-dual-approval-quorum.md`.
  */
 
 /** A single approver's sign-off, produced by `signMessage` on their wallet. */

@@ -35,6 +35,17 @@ pub struct RunInfo {
     /// `FundCommitment` must reveal the same `owner_secret` to prove it comes
     /// from whoever opened the run.
     pub owner_commitment: felt252,
+    /// The two approver commitments, fixed at `OpenRun` and required to be
+    /// distinct. Like `owner_commitment` these are Poseidon hashes of a secret,
+    /// never addresses — see `docs/adr-dual-approval-quorum.md`.
+    pub approver_a_commitment: felt252,
+    pub approver_b_commitment: felt252,
+    /// Set by `ApproveRun` when the matching approver secret is revealed. Both
+    /// must be true before any `FundCommitment` is accepted. Since the two
+    /// commitments are distinct by construction, one secret revealed twice can
+    /// only ever set the same flag twice.
+    pub approved_a: bool,
+    pub approved_b: bool,
 }
 
 #[derive(Serde, Copy, Drop, PartialEq, Debug, starknet::Store)]
@@ -50,6 +61,11 @@ pub enum PayrollOperation {
     OpenRun,
     FundCommitment,
     Claim,
+    /// Appended last deliberately. Cairo's derived Serde for a unit-variant enum
+    /// writes the declaration index, so OpenRun/FundCommitment/Claim keep
+    /// discriminants 0/1/2 and the TypeScript constants mirroring them in
+    /// `integration/src/payroll-invoke.ts` stay correct.
+    ApproveRun,
 }
 
 #[starknet::interface]
@@ -66,7 +82,13 @@ pub trait IPayroll<T> {
     /// for `OpenRun` it is the run's `owner_secret` (`run_id` must equal
     /// `compute_run_id(secret)`); for `FundCommitment` it must be that same
     /// run's `owner_secret`, proving the caller is the run's opener; for
-    /// `Claim` it is the commitment secret, as before.
+    /// `Claim` it is the commitment secret, as before; for `ApproveRun` it is
+    /// one of the run's two approver secrets.
+    ///
+    /// `OpenRun` additionally overloads `commitment_hash` and `note_id` as the
+    /// two approver commitments (the same documented dual-use trick as `amount`
+    /// standing in for `expected_total`), which keeps the quorum from costing a
+    /// 9th and 10th parameter.
     fn privacy_invoke(
         ref self: T,
         operation: PayrollOperation,
@@ -83,6 +105,7 @@ pub trait IPayroll<T> {
 pub const PAYROLL_COMMITMENT_TAG: felt252 = 'PAYROLL_COMMITMENT_TAG:V1';
 pub const PAYROLL_RUN_ID_TAG: felt252 = 'PAYROLL_RUN_ID_TAG:V1';
 pub const PAYROLL_RUN_OWNER_TAG: felt252 = 'PAYROLL_RUN_OWNER_TAG:V1';
+pub const PAYROLL_APPROVER_TAG: felt252 = 'PAYROLL_APPROVER_TAG:V1';
 
 /// Mirrored byte-for-byte by `computeCommitmentHash` in
 /// `integration/src/config.ts`. Both operands are raw felt252 values — neither
@@ -108,6 +131,14 @@ pub fn compute_run_owner_commitment(owner_secret: felt252) -> felt252 {
     core::poseidon::poseidon_hash_span([PAYROLL_RUN_OWNER_TAG, owner_secret].span())
 }
 
+/// Stored twice on `RunInfo` at `OpenRun`, once per approver. Its own domain
+/// tag, so an approver commitment can never collide with a run id, an owner
+/// commitment or a payment commitment derived from the same secret — a secret
+/// reused across roles still yields four unrelated values.
+pub fn compute_approver_commitment(approver_secret: felt252) -> felt252 {
+    core::poseidon::poseidon_hash_span([PAYROLL_APPROVER_TAG, approver_secret].span())
+}
+
 pub mod errors {
     pub const CALLER_NOT_PRIVACY: felt252 = 'CALLER_NOT_PRIVACY';
     pub const RUN_EXISTS: felt252 = 'RUN_EXISTS';
@@ -121,6 +152,11 @@ pub mod errors {
     pub const ZERO_OWNER_SECRET: felt252 = 'ZERO_OWNER_SECRET';
     pub const RUN_ID_MISMATCH: felt252 = 'RUN_ID_MISMATCH';
     pub const NOT_RUN_OWNER: felt252 = 'NOT_RUN_OWNER';
+    pub const ZERO_APPROVER_COMMITMENT: felt252 = 'ZERO_APPROVER_COMMITMENT';
+    pub const APPROVERS_NOT_DISTINCT: felt252 = 'APPROVERS_NOT_DISTINCT';
+    pub const ZERO_APPROVER_SECRET: felt252 = 'ZERO_APPROVER_SECRET';
+    pub const NOT_APPROVER: felt252 = 'NOT_APPROVER';
+    pub const QUORUM_NOT_MET: felt252 = 'QUORUM_NOT_MET';
     pub const TOKEN_MISMATCH: felt252 = 'TOKEN_MISMATCH';
     pub const COMMITMENT_EXISTS: felt252 = 'COMMITMENT_EXISTS';
     pub const COMMITMENT_NOT_FOUND: felt252 = 'COMMITMENT_NOT_FOUND';
@@ -207,6 +243,29 @@ pub mod Payroll {
                     // without knowing the secret behind it.
                     assert(secret.is_non_zero(), errors::ZERO_OWNER_SECRET);
                     assert(run_id == super::compute_run_id(secret), errors::RUN_ID_MISMATCH);
+                    // Documented dual use, like `amount` standing in for
+                    // expected_total above: on OpenRun these two carry the
+                    // approver commitments. The payer never sends an approver
+                    // *secret* here — only the hashes the approvers handed over.
+                    let approver_a_commitment = commitment_hash;
+                    let approver_b_commitment = note_id;
+                    assert(
+                        approver_a_commitment.is_non_zero(), errors::ZERO_APPROVER_COMMITMENT,
+                    );
+                    assert(
+                        approver_b_commitment.is_non_zero(), errors::ZERO_APPROVER_COMMITMENT,
+                    );
+                    // What stops one secret from setting both flags is the
+                    // if/else in ApproveRun, which advances at most one flag per
+                    // call. This assert does something narrower but still
+                    // necessary: with a == b the second slot would be
+                    // unreachable, so the run could never be funded at all. It
+                    // also keeps "two distinct approvers" meaningful rather than
+                    // one identity registered twice.
+                    assert(
+                        approver_a_commitment != approver_b_commitment,
+                        errors::APPROVERS_NOT_DISTINCT,
+                    );
                     let owner_commitment = super::compute_run_owner_commitment(secret);
                     self
                         .runs
@@ -222,6 +281,10 @@ pub mod Payroll {
                                 total_paid: 0,
                                 closed: false,
                                 owner_commitment,
+                                approver_a_commitment,
+                                approver_b_commitment,
+                                approved_a: false,
+                                approved_b: false,
                             },
                         );
                     [].span()
@@ -242,6 +305,11 @@ pub mod Payroll {
                         super::compute_run_owner_commitment(secret) == run.owner_commitment,
                         errors::NOT_RUN_OWNER,
                     );
+                    // The dual-approval quorum, enforced on-chain rather than in
+                    // the UI. `frontend/src/lib/quorum.ts` binds the interface;
+                    // this binds the chain, including callers who route through
+                    // the pool directly and never load the frontend at all.
+                    assert(run.approved_a && run.approved_b, errors::QUORUM_NOT_MET);
 
                     let existing = self.commitments.read(commitment_hash);
                     assert(existing.token.is_zero(), errors::COMMITMENT_EXISTS);
@@ -270,6 +338,34 @@ pub mod Payroll {
                             CommitmentEntry { run_id, token, amount, claimed: false },
                         );
 
+                    [].span()
+                },
+                PayrollOperation::ApproveRun => {
+                    let mut run = self.runs.read(run_id);
+                    assert(run.expected_count.is_non_zero(), errors::RUN_NOT_FOUND);
+                    // A closed run is already fully funded; approving it would
+                    // be recording consent for something that already happened.
+                    assert(!run.closed, errors::RUN_CLOSED);
+                    assert(secret.is_non_zero(), errors::ZERO_APPROVER_SECRET);
+
+                    // Approver identity is a commitment preimage, never an
+                    // address — the same reason RunInfo stores no payer. The
+                    // contract learns that *someone* holding this secret
+                    // approved, and nothing more.
+                    let approval = super::compute_approver_commitment(secret);
+                    let is_a = approval == run.approver_a_commitment;
+                    let is_b = approval == run.approver_b_commitment;
+                    assert(is_a || is_b, errors::NOT_APPROVER);
+
+                    // OpenRun guarantees the two commitments differ, so is_a and
+                    // is_b are mutually exclusive and re-approving is idempotent:
+                    // it rewrites the same flag rather than advancing the quorum.
+                    if is_a {
+                        run.approved_a = true;
+                    } else {
+                        run.approved_b = true;
+                    }
+                    self.runs.write(run_id, run);
                     [].span()
                 },
                 PayrollOperation::Claim => {

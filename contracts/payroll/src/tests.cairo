@@ -1,6 +1,7 @@
 use payroll::payroll::{
-    IPayrollDispatcher, IPayrollDispatcherTrait, PayrollOperation, RunInfo, compute_commitment_hash,
-    compute_run_id, compute_run_owner_commitment,
+    IPayrollDispatcher, IPayrollDispatcherTrait, IPayrollSafeDispatcher,
+    IPayrollSafeDispatcherTrait, PayrollOperation, RunInfo, compute_approver_commitment,
+    compute_commitment_hash, compute_run_id, compute_run_owner_commitment,
 };
 use privacy::objects::OpenNoteDeposit;
 use snforge_std::{
@@ -31,23 +32,61 @@ fn setup() -> (IPayrollDispatcher, ContractAddress) {
     (dispatcher, token)
 }
 
+/// The suite's standard approver pair. Distinct short strings, so their
+/// commitments are distinct too — which is what `OpenRun` requires.
+const APPROVER_A: felt252 = 'APPROVER-A';
+const APPROVER_B: felt252 = 'APPROVER-B';
+
+/// One approver revealing their secret. `ApproveRun` reads only `run_id` and
+/// `secret`; the other parameters are passed for calldata-shape parity with the
+/// other operations.
+fn approve(
+    dispatcher: IPayrollDispatcher,
+    token: ContractAddress,
+    run_id: felt252,
+    approver_secret: felt252,
+) {
+    dispatcher
+        .privacy_invoke(PayrollOperation::ApproveRun, run_id, 0, token, 0, 0, approver_secret, 0);
+}
+
+/// Opens a run with the standard approver pair and collects both approvals, so
+/// the run is immediately fundable.
+///
+/// Since issue #31 a fundable run takes three calls rather than one. Inlining
+/// that at every call site would bury what each test is actually asserting, so
+/// the tests that merely *need* a working run call this, and the tests that are
+/// about `OpenRun` or the quorum itself still spell the calls out.
+fn open_approved_run(
+    dispatcher: IPayrollDispatcher,
+    token: ContractAddress,
+    owner_secret: felt252,
+    expected_total: u128,
+    expected_count: u32,
+) {
+    let run_id = compute_run_id(owner_secret);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            expected_total,
+            expected_count,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+    approve(dispatcher, token, run_id, APPROVER_A);
+    approve(dispatcher, token, run_id, APPROVER_B);
+}
+
 #[test]
 fn test_fund_commitment_increments_run_totals() {
     let (dispatcher, token) = setup();
     let owner_secret: felt252 = 'OWNER-1';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(
-            PayrollOperation::OpenRun,
-            run_id,
-            0,
-            token,
-            150_u128, // amount doubles as expected_total for OpenRun
-            2, // expected_count
-            owner_secret,
-            0,
-        );
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
 
     dispatcher
         .privacy_invoke(
@@ -77,8 +116,7 @@ fn test_run_incomplete_until_all_commitments_claimed() {
     let owner_secret: felt252 = 'OWNER-2';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
 
     // FundCommitment's commitment_hash must equal compute_commitment_hash(secret): the payer
     // computes the hash off-chain from a secret it will later share with the recipient, and
@@ -120,8 +158,7 @@ fn test_omitted_recipient_can_never_be_marked_complete() {
     let run_id = compute_run_id(owner_secret);
 
     // Promises 2 recipients / 150 total, but only ever funds one of them.
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -156,8 +193,7 @@ fn test_underfunding_the_last_commitment_reverts() {
     let owner_secret: felt252 = 'OWNER-SHORT';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -192,8 +228,7 @@ fn test_cannot_fund_more_recipients_than_promised() {
     let owner_secret: felt252 = 'OWNER-EXTRA';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 1);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -227,8 +262,7 @@ fn test_commitment_token_must_match_the_run() {
     let owner_secret: felt252 = 'OWNER-TOK';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 150_u128, 2, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
     // Would otherwise sum two different tokens' amounts into one total.
     dispatcher
         .privacy_invoke(
@@ -293,8 +327,7 @@ fn test_fund_commitment_rejects_third_party_without_owner_secret() {
     let owner_secret: felt252 = 'OWNER-GRIEF';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
     // The griefer knows the secret behind their own commitment_hash, but not
     // the run's owner_secret.
     dispatcher
@@ -317,8 +350,7 @@ fn test_double_claim_reverts() {
     let owner_secret: felt252 = 'OWNER-3';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
 
     let hash_c = compute_commitment_hash('SECRET-C');
     dispatcher
@@ -338,8 +370,7 @@ fn test_claim_with_unknown_secret_reverts() {
     let owner_secret: felt252 = 'OWNER-4';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -403,14 +434,11 @@ fn test_run_owner_commitment_hash_matches_typescript() {
 fn test_open_run_rejects_run_id_opened_twice() {
     let (dispatcher, token) = setup();
     let owner_secret: felt252 = 'OWNER-DUPRUN';
-    let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
     // Same run_id, same owner_secret: expected_count is already non-zero, so
     // this must be rejected rather than silently overwriting the run.
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
 }
 
 #[test]
@@ -439,8 +467,7 @@ fn test_fund_commitment_rejects_the_same_hash_twice() {
     let run_id = compute_run_id(owner_secret);
     let hash_a = compute_commitment_hash('SECRET-DUPHASH');
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 200_u128, 2, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 200_u128, 2);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment, run_id, hash_a, token, 100_u128, 0, owner_secret, 0,
@@ -460,8 +487,7 @@ fn test_fund_commitment_rejects_amount_over_expected_total() {
     let owner_secret: felt252 = 'OWNER-OVER';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
     // Promised 100 total; this single commitment alone claims 150.
     dispatcher
         .privacy_invoke(
@@ -497,8 +523,7 @@ fn test_fund_commitment_rejects_zero_amount() {
     let owner_secret: felt252 = 'OWNER-ZAMT';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -519,8 +544,7 @@ fn test_fund_commitment_rejects_zero_commitment_hash() {
     let owner_secret: felt252 = 'OWNER-ZHASH';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment, run_id, 0, token, 100_u128, 0, owner_secret, 0,
@@ -538,8 +562,7 @@ fn test_claim_returns_the_commitments_real_deposit() {
     let owner_secret: felt252 = 'OWNER-RETVAL';
     let run_id = compute_run_id(owner_secret);
 
-    dispatcher
-        .privacy_invoke(PayrollOperation::OpenRun, run_id, 0, token, 100_u128, 1, owner_secret, 0);
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
     dispatcher
         .privacy_invoke(
             PayrollOperation::FundCommitment,
@@ -561,4 +584,406 @@ fn test_claim_returns_the_commitments_real_deposit() {
         *deposits.at(0) == OpenNoteDeposit { note_id: 'NOTE-RETVAL', token, amount: 100_u128 },
         'deposit must match commitment',
     );
+}
+
+// ---------------------------------------------------------------------------
+// Dual-approval quorum (issue #31)
+//
+// `frontend/src/lib/quorum.ts` binds the UI; these bind the chain. Every test
+// below goes red if the quorum is removed from `Payroll`, which is the point of
+// moving it here.
+// ---------------------------------------------------------------------------
+
+/// Parity pin, same pattern as the commitment and run-ownership hashes.
+/// `integration/src/commitment-parity.test.ts` asserts this identical literal
+/// for `computeApproverCommitment("APPROVER-1")`. Drift makes `ApproveRun`
+/// revert NOT_APPROVER for an approver who is in fact registered.
+#[test]
+fn test_approver_commitment_hash_matches_typescript() {
+    let expected: felt252 =
+        2727062285932658029016924568603133935256695660341735614525950280572049281991;
+    assert(compute_approver_commitment('APPROVER-1') == expected, 'TS/Cairo approver drift');
+}
+
+/// Each role gets its own domain tag, so one secret reused across roles produces
+/// four unrelated values. Without this, an approver commitment could be
+/// satisfied by a value already public on-chain as a run_id.
+#[test]
+fn test_approver_commitment_has_its_own_domain() {
+    let s: felt252 = 'APPROVER-1';
+    assert(compute_approver_commitment(s) != compute_run_id(s), 'collides with run_id');
+    assert(compute_approver_commitment(s) != compute_run_owner_commitment(s), 'collides w/ owner');
+    assert(compute_approver_commitment(s) != compute_commitment_hash(s), 'collides w/ commitment');
+}
+
+/// The gate itself: an unapproved run cannot be funded, however legitimate the
+/// payer. This is the test that goes red if the quorum is deleted.
+#[test]
+#[should_panic(expected: 'QUORUM_NOT_MET')]
+fn test_fund_commitment_requires_approvals() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q1';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+
+    // The payer proves run ownership correctly and is still refused: owning a
+    // run is not approving it.
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-Q1'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        );
+}
+
+/// One approver is not a quorum.
+#[test]
+#[should_panic(expected: 'QUORUM_NOT_MET')]
+fn test_fund_commitment_requires_the_second_approver() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q2';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+    approve(dispatcher, token, run_id, APPROVER_A);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-Q2'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        );
+}
+
+/// The acceptance criterion named in issue #31: one approver revealing the same
+/// secret twice must not pass the gate. It cannot, structurally — `ApproveRun`
+/// advances at most one flag per call, and a given secret always matches the
+/// same slot, so re-revealing it only rewrites the flag it already set.
+#[test]
+#[should_panic(expected: 'QUORUM_NOT_MET')]
+fn test_same_approver_twice_does_not_satisfy_quorum() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q3';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+
+    // Both calls succeed — approving is idempotent — but they are one identity
+    // and must count once.
+    approve(dispatcher, token, run_id, APPROVER_A);
+    approve(dispatcher, token, run_id, APPROVER_A);
+
+    let run: RunInfo = dispatcher.get_run(run_id);
+    assert(run.approved_a, 'A recorded');
+    assert(!run.approved_b, 'B still missing');
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-Q3'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        );
+}
+
+/// The positive half: two distinct approvers unlock funding, and what the run
+/// stores is a commitment hash — never an address (CLAUDE.md §6).
+#[test]
+fn test_two_distinct_approvers_unlock_funding() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q4';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+
+    let opened: RunInfo = dispatcher.get_run(run_id);
+    assert(!opened.approved_a, 'A unapproved at OpenRun');
+    assert(!opened.approved_b, 'B unapproved at OpenRun');
+    assert(opened.approver_a_commitment == compute_approver_commitment(APPROVER_A), 'A commitment');
+    assert(opened.approver_b_commitment == compute_approver_commitment(APPROVER_B), 'B commitment');
+
+    approve(dispatcher, token, run_id, APPROVER_A);
+    approve(dispatcher, token, run_id, APPROVER_B);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-Q4'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        );
+
+    let run: RunInfo = dispatcher.get_run(run_id);
+    assert(run.approved_a && run.approved_b, 'quorum recorded');
+    assert(run.funded_count == 1, 'funded after quorum');
+    assert(run.closed, 'closed on final commitment');
+}
+
+/// Acceptance criterion: a run missing its second approver can never reach
+/// `is_complete`. It cannot even be funded, so `funded_count` never leaves zero
+/// and `closed` never becomes true — asserted here after the revert rather than
+/// inferred from it.
+#[test]
+#[feature("safe_dispatcher")]
+fn test_run_without_second_approver_can_never_be_complete() {
+    let (dispatcher, token) = setup();
+    let safe = IPayrollSafeDispatcher { contract_address: dispatcher.contract_address };
+    let owner_secret: felt252 = 'OWNER-Q5';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+    approve(dispatcher, token, run_id, APPROVER_A);
+
+    match safe
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-Q5'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        ) {
+        Result::Ok(_) => assert(false, 'must not fund on 1 approval'),
+        Result::Err(reason) => assert(*reason.at(0) == 'QUORUM_NOT_MET', 'wrong revert reason'),
+    }
+
+    let run: RunInfo = dispatcher.get_run(run_id);
+    assert(run.funded_count == 0, 'nothing funded');
+    assert(run.total_committed == 0_u128, 'nothing committed');
+    assert(!run.closed, 'run never closed');
+    assert(!dispatcher.is_complete(run_id), 'never complete');
+}
+
+/// Two identical approver commitments are one approver written twice. Allowing
+/// them would let a payer satisfy the quorum alone with a single secret.
+#[test]
+#[should_panic(expected: 'APPROVERS_NOT_DISTINCT')]
+fn test_open_run_rejects_identical_approver_commitments() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q6';
+    let same = compute_approver_commitment(APPROVER_A);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            compute_run_id(owner_secret),
+            same,
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            same,
+        );
+}
+
+#[test]
+#[should_panic(expected: 'ZERO_APPROVER_COMMITMENT')]
+fn test_open_run_rejects_missing_first_approver() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q7';
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            compute_run_id(owner_secret),
+            0,
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+}
+
+#[test]
+#[should_panic(expected: 'ZERO_APPROVER_COMMITMENT')]
+fn test_open_run_rejects_missing_second_approver() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q8';
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            compute_run_id(owner_secret),
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            0,
+        );
+}
+
+/// Anyone may call `ApproveRun`, but only a registered approver's secret
+/// advances the quorum.
+#[test]
+#[should_panic(expected: 'NOT_APPROVER')]
+fn test_approve_run_rejects_an_unregistered_approver() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q9';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+
+    approve(dispatcher, token, run_id, 'APPROVER-INTRUDER');
+}
+
+/// The run's own owner_secret is not an approval: it hashes into a different
+/// domain, so the payer cannot stand in for one of their own approvers.
+#[test]
+#[should_panic(expected: 'NOT_APPROVER')]
+fn test_owner_secret_is_not_an_approval() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q10';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+
+    approve(dispatcher, token, run_id, owner_secret);
+}
+
+#[test]
+#[should_panic(expected: 'ZERO_APPROVER_SECRET')]
+fn test_approve_run_rejects_zero_secret() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q11';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+
+    approve(dispatcher, token, run_id, 0);
+}
+
+#[test]
+#[should_panic(expected: 'RUN_NOT_FOUND')]
+fn test_approve_run_rejects_a_run_that_was_never_opened() {
+    let (dispatcher, token) = setup();
+    approve(dispatcher, token, compute_run_id('OWNER-Q12'), APPROVER_A);
+}
+
+/// A closed run is already fully funded; approving it would record consent
+/// after the fact.
+#[test]
+#[should_panic(expected: 'RUN_CLOSED')]
+fn test_approve_run_rejects_a_closed_run() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-Q13';
+    let run_id = compute_run_id(owner_secret);
+
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-Q13'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        );
+    assert(dispatcher.get_run(run_id).closed, 'run is closed');
+
+    approve(dispatcher, token, run_id, APPROVER_A);
 }
