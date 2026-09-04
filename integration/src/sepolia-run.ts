@@ -18,7 +18,13 @@ import {
   buildFundCommitmentCall,
   buildOpenRunCall,
 } from "./payroll-invoke.js";
-import { receiptBlockNumber, submitPrivateCall, waitForMaturity } from "./submit.js";
+import { requireCommitmentFunded } from "./payroll-events.js";
+import {
+  receiptBlockNumber,
+  receiptEvents,
+  submitPrivateCall,
+  waitForMaturity,
+} from "./submit.js";
 
 /** 128-bit non-zero felt, unique per test run so two claims cannot squat the same run_id. */
 export function newFeltSecret(): bigint {
@@ -142,15 +148,28 @@ export async function openAndFundSingleCommitment(params: {
   const fundSubmit = await submitPrivateCall(params.payer, funded.callAndProof);
   await waitForMaturity(receiptBlockNumber(fundSubmit.receipt));
 
+  // Read back what the chain actually announced rather than trusting the local
+  // variables this function computed (issue #33). Throws if no CommitmentFunded
+  // is present, so a recipient is never told about a payment the chain did not
+  // record — the notification used to fire merely because execute() returned.
+  const fundedEvent = requireCommitmentFunded(
+    receiptEvents(fundSubmit.receipt),
+    payrollAddress,
+    { runId, commitmentHash },
+  );
+
   let notified = false;
   if (nodePromise) {
     const { publicKey } = deriveRecipientKeyPair(params.commitmentSecret);
     const payload = buildClaimNotificationPayload({
-      runId,
-      commitmentHash,
+      // From the event. `secret` is not and must never be on-chain — it is the
+      // commitment preimage the recipient needs to claim, carried off-chain
+      // over Waku, which is the whole point of the notification.
+      runId: fundedEvent.runId,
+      commitmentHash: fundedEvent.commitmentHash,
       secret: params.commitmentSecret,
       token,
-      amount: params.amount,
+      amount: fundedEvent.amount,
     });
     const node = await nodePromise;
     try {
@@ -166,6 +185,7 @@ export async function openAndFundSingleCommitment(params: {
     commitmentHash,
     openTx: openSubmit.txHash,
     fundTx: fundSubmit.txHash,
+    fundedEvent,
     notified,
   };
 }
