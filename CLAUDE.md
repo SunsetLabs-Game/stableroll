@@ -241,6 +241,12 @@ copying the other's new value without understanding which side drifted.
   considered, and the one documented residual (an attacker who front-runs a
   pending `FundCommitment` after `owner_secret` first becomes public calldata;
   narrower than the original hole, not eliminated).
+- Events expose **nothing that storage does not already expose**. `RunOpened`,
+  `RunApproved`, `CommitmentFunded`, `RunClosed` and `CommitmentClaimed` carry
+  only values readable through `get_run` / `get_commitment`. No party's address
+  appears in any of them, and `CommitmentClaimed` deliberately omits `note_id`,
+  which would tie a claimed commitment to a specific note inside the pool. The
+  tests construct these payloads literally, so adding a field does not compile.
 - Funding requires an on-chain dual-approval quorum. `OpenRun` fixes two
   distinct approver commitments; each approver reveals their secret via
   `ApproveRun`; `FundCommitment` reverts `QUORUM_NOT_MET` until both have

@@ -184,6 +184,87 @@ pub mod Payroll {
         commitments: starknet::storage::Map<felt252, CommitmentEntry>,
     }
 
+    /// Every field below is already publicly readable through `get_run` /
+    /// `get_commitment`, so these events leak nothing new. That is the bar
+    /// (issue #33), and it is why two things are deliberately absent:
+    ///
+    /// - **No address of any party.** `RunInfo` stores no payer for the reason
+    ///   in CLAUDE.md §6, and an event must not reintroduce the link. The only
+    ///   address emitted anywhere is the run's `token`, which is a property of
+    ///   the run, not of a person.
+    /// - **No `note_id` on `CommitmentClaimed`.** It is the one value in
+    ///   `Claim`'s arguments that is *not* already in storage, and it would tie
+    ///   a claimed commitment to a specific note inside the pool — exactly the
+    ///   linkage the pool exists to prevent.
+    ///
+    /// `run_id` is a key on all five so an indexer can follow one run, and
+    /// `commitment_hash` is a key on the two commitment events so a claim page
+    /// can watch for one recipient's commitment without replaying everything.
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {
+        RunOpened: RunOpened,
+        RunApproved: RunApproved,
+        CommitmentFunded: CommitmentFunded,
+        RunClosed: RunClosed,
+        CommitmentClaimed: CommitmentClaimed,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct RunOpened {
+        #[key]
+        pub run_id: felt252,
+        pub token: ContractAddress,
+        pub expected_count: u32,
+        pub expected_total: u128,
+    }
+
+    /// One approver's sign-off (issue #31). `approver_commitment` is the value
+    /// already fixed on `RunInfo` at `OpenRun`, never the revealed secret: the
+    /// secret is in public calldata either way, but an event is the wrong place
+    /// to republish it, and the commitment is what identifies the slot.
+    #[derive(Drop, starknet::Event)]
+    pub struct RunApproved {
+        #[key]
+        pub run_id: felt252,
+        pub approver_commitment: felt252,
+        pub approved_a: bool,
+        pub approved_b: bool,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct CommitmentFunded {
+        #[key]
+        pub run_id: felt252,
+        #[key]
+        pub commitment_hash: felt252,
+        pub amount: u128,
+        /// Running tallies after this commitment, so a reader following the log
+        /// never has to also read storage to know where the run stands.
+        pub funded_count: u32,
+        pub total_committed: u128,
+    }
+
+    /// Emitted only when the final commitment lands the run exactly on its
+    /// promised budget. Its absence is meaningful: a run that never emits this
+    /// was never fully funded, and `is_complete` can never return true for it.
+    #[derive(Drop, starknet::Event)]
+    pub struct RunClosed {
+        #[key]
+        pub run_id: felt252,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct CommitmentClaimed {
+        #[key]
+        pub run_id: felt252,
+        #[key]
+        pub commitment_hash: felt252,
+        pub amount: u128,
+        pub paid_count: u32,
+        pub total_paid: u128,
+    }
+
     #[constructor]
     fn constructor(ref self: ContractState, privacy_contract: ContractAddress) {
         self.privacy_contract.write(privacy_contract);
@@ -287,6 +368,12 @@ pub mod Payroll {
                                 approved_b: false,
                             },
                         );
+                    self
+                        .emit(
+                            RunOpened {
+                                run_id, token, expected_count, expected_total: amount,
+                            },
+                        );
                     [].span()
                 },
                 PayrollOperation::FundCommitment => {
@@ -338,6 +425,22 @@ pub mod Payroll {
                             CommitmentEntry { run_id, token, amount, claimed: false },
                         );
 
+                    self
+                        .emit(
+                            CommitmentFunded {
+                                run_id,
+                                commitment_hash,
+                                amount,
+                                funded_count: run.funded_count,
+                                total_committed: run.total_committed,
+                            },
+                        );
+                    // Ordered after CommitmentFunded so a reader sees the
+                    // commitment that closed the run before the closure itself.
+                    if run.closed {
+                        self.emit(RunClosed { run_id });
+                    };
+
                     [].span()
                 },
                 PayrollOperation::ApproveRun => {
@@ -366,6 +469,15 @@ pub mod Payroll {
                         run.approved_b = true;
                     }
                     self.runs.write(run_id, run);
+                    self
+                        .emit(
+                            RunApproved {
+                                run_id,
+                                approver_commitment: approval,
+                                approved_a: run.approved_a,
+                                approved_b: run.approved_b,
+                            },
+                        );
                     [].span()
                 },
                 PayrollOperation::Claim => {
@@ -385,6 +497,19 @@ pub mod Payroll {
                     run.paid_count += 1;
                     run.total_paid += entry.amount;
                     self.runs.write(entry.run_id, run);
+
+                    // Deliberately carries no note_id and no recipient address —
+                    // see the note on the Event enum.
+                    self
+                        .emit(
+                            CommitmentClaimed {
+                                run_id: entry.run_id,
+                                commitment_hash,
+                                amount: entry.amount,
+                                paid_count: run.paid_count,
+                                total_paid: run.total_paid,
+                            },
+                        );
 
                     IERC20Dispatcher { contract_address: entry.token }
                         .approve(spender: privacy_addr, amount: entry.amount.into());

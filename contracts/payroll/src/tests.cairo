@@ -1,11 +1,12 @@
 use payroll::payroll::{
     IPayrollDispatcher, IPayrollDispatcherTrait, IPayrollSafeDispatcher,
-    IPayrollSafeDispatcherTrait, PayrollOperation, RunInfo, compute_approver_commitment,
+    IPayrollSafeDispatcherTrait, Payroll, PayrollOperation, RunInfo, compute_approver_commitment,
     compute_commitment_hash, compute_run_id, compute_run_owner_commitment,
 };
 use privacy::objects::OpenNoteDeposit;
 use snforge_std::{
-    ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address, start_mock_call,
+    ContractClassTrait, DeclareResultTrait, EventSpyAssertionsTrait, EventSpyTrait, declare,
+    spy_events, start_cheat_caller_address, start_mock_call,
 };
 use starknet::ContractAddress;
 
@@ -986,4 +987,465 @@ fn test_approve_run_rejects_a_closed_run() {
     assert(dispatcher.get_run(run_id).closed, 'run is closed');
 
     approve(dispatcher, token, run_id, APPROVER_A);
+}
+
+// ---------------------------------------------------------------------------
+// Events (issue #33)
+//
+// Before these, everything off-chain had to poll storage: notify/ fired the
+// Waku message from the TypeScript caller rather than from anything the chain
+// announced, so a commitment funded by any other path notified nobody.
+//
+// The privacy bar is that no event field exposes anything `get_run` /
+// `get_commitment` does not already expose. `test_claim_event_carries_no_note_id`
+// pins the one place that could regress.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_open_run_emits_run_opened() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E1';
+    let run_id = compute_run_id(owner_secret);
+    let mut spy = spy_events();
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            150_u128,
+            2,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    dispatcher.contract_address,
+                    Payroll::Event::RunOpened(
+                        Payroll::RunOpened {
+                            run_id, token, expected_count: 2, expected_total: 150_u128,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+/// Each approval announces the quorum's progress, so an off-chain watcher knows
+/// funding is unblocked without reading `RunInfo`.
+#[test]
+fn test_approve_run_emits_the_quorum_progressing() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E2';
+    let run_id = compute_run_id(owner_secret);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::OpenRun,
+            run_id,
+            compute_approver_commitment(APPROVER_A),
+            token,
+            100_u128,
+            1,
+            owner_secret,
+            compute_approver_commitment(APPROVER_B),
+        );
+
+    let mut spy = spy_events();
+    approve(dispatcher, token, run_id, APPROVER_A);
+    approve(dispatcher, token, run_id, APPROVER_B);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    dispatcher.contract_address,
+                    Payroll::Event::RunApproved(
+                        Payroll::RunApproved {
+                            run_id,
+                            approver_commitment: compute_approver_commitment(APPROVER_A),
+                            approved_a: true,
+                            approved_b: false,
+                        },
+                    ),
+                ),
+                (
+                    dispatcher.contract_address,
+                    Payroll::Event::RunApproved(
+                        Payroll::RunApproved {
+                            run_id,
+                            approver_commitment: compute_approver_commitment(APPROVER_B),
+                            approved_a: true,
+                            approved_b: true,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+#[test]
+fn test_fund_commitment_emits_running_totals() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E3';
+    let run_id = compute_run_id(owner_secret);
+    let hash_a = compute_commitment_hash('SECRET-E3A');
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
+
+    let mut spy = spy_events();
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash_a, token, 100_u128, 0, owner_secret, 0,
+        );
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    dispatcher.contract_address,
+                    Payroll::Event::CommitmentFunded(
+                        Payroll::CommitmentFunded {
+                            run_id,
+                            commitment_hash: hash_a,
+                            amount: 100_u128,
+                            funded_count: 1,
+                            total_committed: 100_u128,
+                        },
+                    ),
+                ),
+            ],
+        );
+    // Not closed yet: one of two commitments, and short of the budget.
+    spy
+        .assert_not_emitted(
+            @array![
+                (dispatcher.contract_address, Payroll::Event::RunClosed(Payroll::RunClosed { run_id })),
+            ],
+        );
+}
+
+#[test]
+fn test_final_commitment_emits_run_closed() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E4';
+    let run_id = compute_run_id(owner_secret);
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
+
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-E4A'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        );
+
+    let mut spy = spy_events();
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-E4B'),
+            token,
+            50_u128,
+            0,
+            owner_secret,
+            0,
+        );
+
+    spy
+        .assert_emitted(
+            @array![
+                (dispatcher.contract_address, Payroll::Event::RunClosed(Payroll::RunClosed { run_id })),
+            ],
+        );
+}
+
+/// The absence of `RunClosed` is itself the signal. A payer who omits a
+/// recipient never emits it, so an auditor reading only the log can tell the
+/// run was never fully funded — the same property `is_complete` encodes, now
+/// visible without reading storage.
+#[test]
+fn test_run_missing_a_recipient_never_emits_run_closed() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E5';
+    let run_id = compute_run_id(owner_secret);
+    let mut spy = spy_events();
+
+    // Promises two recipients, funds one, then stops.
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment,
+            run_id,
+            compute_commitment_hash('SECRET-E5A'),
+            token,
+            100_u128,
+            0,
+            owner_secret,
+            0,
+        );
+
+    spy
+        .assert_not_emitted(
+            @array![
+                (dispatcher.contract_address, Payroll::Event::RunClosed(Payroll::RunClosed { run_id })),
+            ],
+        );
+    assert(!dispatcher.is_complete(run_id), 'and is_complete agrees');
+}
+
+#[test]
+fn test_claim_emits_commitment_claimed() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E6';
+    let run_id = compute_run_id(owner_secret);
+    let hash = compute_commitment_hash('SECRET-E6');
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash, token, 100_u128, 0, owner_secret, 0,
+        );
+
+    let mut spy = spy_events();
+    dispatcher
+        .privacy_invoke(PayrollOperation::Claim, run_id, 0, token, 0, 0, 'SECRET-E6', 'NOTE-E6');
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    dispatcher.contract_address,
+                    Payroll::Event::CommitmentClaimed(
+                        Payroll::CommitmentClaimed {
+                            run_id,
+                            commitment_hash: hash,
+                            amount: 100_u128,
+                            paid_count: 1,
+                            total_paid: 100_u128,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+/// The privacy constraint from issue #33, pinned. `note_id` is the one value in
+/// `Claim`'s arguments that storage does not already expose, and emitting it
+/// would tie a claimed commitment to a specific note inside the pool.
+///
+/// `assert_emitted` matches the *whole* serialized payload, so this pins the
+/// event to exactly these five fields. The guard is stronger than a failing
+/// assertion: adding `note_id` to `CommitmentClaimed` does not compile, because
+/// this test and the lifecycle test construct the struct literally
+/// (`error[E0003]: Missing member "note_id"`). The leak cannot be introduced
+/// without editing the test that forbids it.
+#[test]
+fn test_claim_event_carries_no_note_id() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E7';
+    let run_id = compute_run_id(owner_secret);
+    let hash = compute_commitment_hash('SECRET-E7');
+    open_approved_run(dispatcher, token, owner_secret, 100_u128, 1);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash, token, 100_u128, 0, owner_secret, 0,
+        );
+
+    let mut spy = spy_events();
+    // A note_id no other value in this test could collide with.
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::Claim, run_id, 0, token, 0, 0, 'SECRET-E7', 'DISTINCTIVE-NOTE',
+        );
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    dispatcher.contract_address,
+                    Payroll::Event::CommitmentClaimed(
+                        Payroll::CommitmentClaimed {
+                            run_id,
+                            commitment_hash: hash,
+                            amount: 100_u128,
+                            paid_count: 1,
+                            total_paid: 100_u128,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+/// The acceptance criterion: a reviewer can reconstruct a run's whole lifecycle
+/// from events alone. One two-recipient run, opened through to fully claimed,
+/// with every state transition present in the log and nothing read from storage.
+#[test]
+fn test_full_run_lifecycle_is_reconstructible_from_events() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E8';
+    let run_id = compute_run_id(owner_secret);
+    let hash_a = compute_commitment_hash('SECRET-E8A');
+    let hash_b = compute_commitment_hash('SECRET-E8B');
+    let addr = dispatcher.contract_address;
+    let mut spy = spy_events();
+
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash_a, token, 100_u128, 0, owner_secret, 0,
+        );
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash_b, token, 50_u128, 0, owner_secret, 0,
+        );
+    dispatcher
+        .privacy_invoke(PayrollOperation::Claim, run_id, 0, token, 0, 0, 'SECRET-E8A', 'NOTE-A');
+    dispatcher
+        .privacy_invoke(PayrollOperation::Claim, run_id, 0, token, 0, 0, 'SECRET-E8B', 'NOTE-B');
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    addr,
+                    Payroll::Event::RunOpened(
+                        Payroll::RunOpened {
+                            run_id, token, expected_count: 2, expected_total: 150_u128,
+                        },
+                    ),
+                ),
+                (
+                    addr,
+                    Payroll::Event::RunApproved(
+                        Payroll::RunApproved {
+                            run_id,
+                            approver_commitment: compute_approver_commitment(APPROVER_A),
+                            approved_a: true,
+                            approved_b: false,
+                        },
+                    ),
+                ),
+                (
+                    addr,
+                    Payroll::Event::RunApproved(
+                        Payroll::RunApproved {
+                            run_id,
+                            approver_commitment: compute_approver_commitment(APPROVER_B),
+                            approved_a: true,
+                            approved_b: true,
+                        },
+                    ),
+                ),
+                (
+                    addr,
+                    Payroll::Event::CommitmentFunded(
+                        Payroll::CommitmentFunded {
+                            run_id,
+                            commitment_hash: hash_a,
+                            amount: 100_u128,
+                            funded_count: 1,
+                            total_committed: 100_u128,
+                        },
+                    ),
+                ),
+                (
+                    addr,
+                    Payroll::Event::CommitmentFunded(
+                        Payroll::CommitmentFunded {
+                            run_id,
+                            commitment_hash: hash_b,
+                            amount: 50_u128,
+                            funded_count: 2,
+                            total_committed: 150_u128,
+                        },
+                    ),
+                ),
+                (addr, Payroll::Event::RunClosed(Payroll::RunClosed { run_id })),
+                (
+                    addr,
+                    Payroll::Event::CommitmentClaimed(
+                        Payroll::CommitmentClaimed {
+                            run_id,
+                            commitment_hash: hash_a,
+                            amount: 100_u128,
+                            paid_count: 1,
+                            total_paid: 100_u128,
+                        },
+                    ),
+                ),
+                (
+                    addr,
+                    Payroll::Event::CommitmentClaimed(
+                        Payroll::CommitmentClaimed {
+                            run_id,
+                            commitment_hash: hash_b,
+                            amount: 50_u128,
+                            paid_count: 2,
+                            total_paid: 150_u128,
+                        },
+                    ),
+                ),
+            ],
+        );
+}
+
+/// Pins the **raw wire layout** of `CommitmentFunded`, because
+/// `integration/src/payroll-events.ts` decodes it from a transaction receipt by
+/// position. `assert_emitted` above compares deserialized structs and would
+/// happily pass while the felt layout changed underneath it.
+///
+/// This is the same parity-pair idea as the commitment hash: Cairo pins the
+/// layout here, TypeScript pins the identical fixture in
+/// `integration/src/payroll-events.test.ts`. Drift makes the claim
+/// notification read the wrong felt as the amount.
+#[test]
+fn test_commitment_funded_wire_layout_matches_typescript() {
+    let (dispatcher, token) = setup();
+    let owner_secret: felt252 = 'OWNER-E9';
+    let run_id = compute_run_id(owner_secret);
+    let hash = compute_commitment_hash('SECRET-E9');
+    open_approved_run(dispatcher, token, owner_secret, 150_u128, 2);
+
+    let mut spy = spy_events();
+    dispatcher
+        .privacy_invoke(
+            PayrollOperation::FundCommitment, run_id, hash, token, 100_u128, 0, owner_secret, 0,
+        );
+
+    let events = spy.get_events();
+    let (emitter, raw) = events.events.span().at(0);
+    assert(*emitter == dispatcher.contract_address, 'emitted by Payroll');
+
+    // `.span()` disambiguates ArrayTrait::at from SpanTrait::at.
+    let keys = raw.keys.span();
+    let data = raw.data.span();
+
+    // keys[0] is the variant selector, then the two #[key] fields in order.
+    assert(keys.len() == 3, 'three keys');
+    assert(*keys.at(0) == selector!("CommitmentFunded"), 'keys[0] = selector');
+    // The same literal `integration/src/payroll-events.ts` pins for
+    // hash.getSelectorFromName("CommitmentFunded"). Note this IS the right use
+    // of starknet_keccak — event keys are selectors. It is not the mistake
+    // CLAUDE.md §3 warns about, which is using it for a *commitment* hash.
+    assert(
+        selector!("CommitmentFunded") == 210239575222622801988925347656546139608989566980615942258882279379756782329,
+        'TS/Cairo selector drift',
+    );
+    assert(*keys.at(1) == run_id, 'keys[1] = run_id');
+    assert(*keys.at(2) == hash, 'keys[2] = commitment_hash');
+
+    // Unkeyed fields, in declaration order. u128 and u32 are one felt each.
+    assert(data.len() == 3, 'three data felts');
+    assert(*data.at(0) == 100, 'data[0] = amount');
+    assert(*data.at(1) == 1, 'data[1] = funded_count');
+    assert(*data.at(2) == 100, 'data[2] = total_committed');
 }
