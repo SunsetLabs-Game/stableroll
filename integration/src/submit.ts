@@ -6,6 +6,7 @@ import {
   type OutsideExecutionOptions,
 } from "starknet";
 import { SEPOLIA_RPC_PROVIDER } from "./config.js";
+import type { RawEvent } from "./payroll-events.js";
 
 type CallAndProof = {
   call: Call;
@@ -70,4 +71,24 @@ export async function waitForMaturity(fromBlock: number, minDepth = 10, pollMs =
     latest = await SEPOLIA_RPC_PROVIDER.getBlockNumber();
   }
   return latest;
+}
+
+/**
+ * Events a successful receipt carries, for decoding with `payroll-events.ts`.
+ *
+ * Narrows through `isSuccess()` for the same reason `receiptBlockNumber` does:
+ * `GetTransactionReceiptResponse` is a union and the ERROR variant has no
+ * events. Reading events off a failed transaction would silently yield an empty
+ * list, which reads as "the chain announced nothing" — true, but for the wrong
+ * reason, and it would hide the failure.
+ */
+export function receiptEvents(receipt: GetTransactionReceiptResponse): RawEvent[] {
+  if (!receipt.isSuccess()) {
+    throw new Error(
+      receipt.isError()
+        ? `transaction failed: ${String(receipt.value)}`
+        : "transaction receipt is not successful",
+    );
+  }
+  return receipt.events ?? [];
 }
