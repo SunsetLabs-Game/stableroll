@@ -24,11 +24,25 @@
 // claim transaction itself already reveals, because nothing here is derived
 // from anything the payer's Starknet identity ever touches.
 
+// Relative imports in this package are extensionless on purpose. tsconfig sets
+// `moduleResolution: "Bundler"`, which allows it, and Turbopack does not rewrite
+// a `./x.js` specifier to the `./x.ts` file on disk — with the `.js` suffix the
+// frontend's browser bundle fails to resolve this module (issue #35). The
+// package's *external* subpath names in `exports` keep their `.js` spelling,
+// since those are map keys rather than filesystem paths.
+
 import { getPublicKey } from "@waku/message-encryption";
 import { AutoShardingRoutingInfo, ensureValidContentTopic } from "@waku/utils";
 import { DefaultNetworkConfig } from "@waku/interfaces";
 import type { IRoutingInfo } from "@waku/interfaces";
 import { sha256 } from "@noble/hashes/sha256";
+// Hex helpers from @noble/hashes rather than Node's Buffer, so this module runs
+// unchanged in a browser bundle. The claim page (issue #35) must derive the
+// same topic and key the payer does, and the issue is explicit that the
+// derivation has exactly one implementation — which means this file has to be
+// isomorphic rather than duplicated. Verified byte-identical to the previous
+// Buffer-based output by notify/src/topics.test.ts's pinned literals.
+import { bytesToHex, hexToBytes } from "@noble/hashes/utils";
 
 export const APPLICATION_NAME = "stableroll-payroll";
 export const CONTENT_TOPIC_VERSION = "1";
@@ -47,7 +61,7 @@ function secretToBytes(secret: bigint): Uint8Array {
   }
   let hex = secret.toString(16);
   if (hex.length % 2 !== 0) hex = "0" + hex;
-  return Uint8Array.from(Buffer.from(hex, "hex"));
+  return hexToBytes(hex);
 }
 
 /**
@@ -83,7 +97,7 @@ export function deriveRecipientKeyPair(secret: bigint): RecipientKeyPair {
 export function deriveContentTopic(publicKey: Uint8Array): string {
   const tag = new TextEncoder().encode(TOPIC_ID_DOMAIN_TAG);
   const digest = sha256(Uint8Array.from([...tag, ...publicKey]));
-  const id = Buffer.from(digest).toString("hex").slice(0, 16);
+  const id = bytesToHex(digest).slice(0, 16);
   const contentTopic = `/${APPLICATION_NAME}/${CONTENT_TOPIC_VERSION}/claim-${id}/proto`;
   ensureValidContentTopic(contentTopic);
   return contentTopic;

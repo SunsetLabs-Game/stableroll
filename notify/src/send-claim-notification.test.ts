@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest";
 import type { LightNode } from "@waku/sdk";
 import { ecies } from "@waku/message-encryption";
-import { deriveRecipientKeyPair, deriveContentTopic, routingInfoFor } from "./topics.js";
-import { createNotificationNode, sendClaimNotification } from "./send-claim-notification.js";
+import { deriveRecipientKeyPair, deriveContentTopic, routingInfoFor } from "./topics";
+import { createNotificationNode, sendClaimNotification } from "./send-claim-notification";
 
 // Talks to the live Waku test fleet (`defaultBootstrap: true` — "The Waku
 // Network", cluster id 1) by design, per the tracker issue: proving real P2P

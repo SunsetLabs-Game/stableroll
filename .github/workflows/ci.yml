@@ -142,6 +142,19 @@ jobs:
         with:
           node-version: 20
 
+      # Same reason the `typescript` job installs it: `payroll-notify` is a
+      # `file:../notify` dependency, so npm links the package but never
+      # installs *its* dependencies. Turbopack bundles that package's .ts
+      # sources into the client chunk (issue #35), and those files resolve
+      # @waku/* and @noble/hashes from notify/node_modules — a sibling of
+      # frontend/, not a parent, so npm's usual hoisting does not reach it.
+      # Without this the build fails resolving them, while `npm run test:offline`
+      # still passes: the tests only import the package's *types*, which are
+      # erased, so nothing forces resolution until the bundler runs.
+      - name: Install notify from the sibling package
+        working-directory: notify
+        run: npm ci
+
       - run: npm ci
       # The dual-approval gate's logic is pure and unit-tested; the pages are
       # covered by the build. Neither needs credentials: Cavos config comes from

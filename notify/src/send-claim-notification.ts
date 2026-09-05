@@ -6,7 +6,7 @@
 
 import { createLightNode, Protocols, type LightNode } from "@waku/sdk";
 import { ecies } from "@waku/message-encryption";
-import { deriveContentTopic, routingInfoFor } from "./topics.js";
+import { deriveContentTopic, routingInfoFor } from "./topics";
 
 export interface ClaimNotificationPayload {
   runId: string;

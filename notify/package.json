@@ -4,11 +4,12 @@
   "type": "module",
   "exports": {
     "./topics.js": "./src/topics.ts",
-    "./send-claim-notification.js": "./src/send-claim-notification.ts"
+    "./send-claim-notification.js": "./src/send-claim-notification.ts",
+    "./receive-claim-notification.js": "./src/receive-claim-notification.ts"
   },
   "scripts": {
     "test": "vitest run",
-    "test:offline": "vitest run topics.test",
+    "test:offline": "vitest run topics.test receive-claim-notification.test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
