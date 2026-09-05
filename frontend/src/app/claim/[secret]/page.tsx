@@ -1,8 +1,20 @@
 "use client";
 
 import { use, useState } from "react";
+import dynamic from "next/dynamic";
 import { useCavos } from "@cavos/kit/react";
 import { isCavosConfigured } from "@/lib/cavos-config";
+
+/**
+ * `ssr: false` because the component starts a libp2p node — it must never run
+ * on the server. This is the documented pattern for lazy-loading a client-only
+ * component in this Next version (`docs/01-app/02-guides/lazy-loading.md`), and
+ * it only works from inside a Client Component, which this page is.
+ */
+const PendingClaims = dynamic(() => import("@/components/PendingClaims"), {
+  ssr: false,
+  loading: () => <p role="status">Loading pending-claim lookup…</p>,
+});
 
 /**
  * Recipient claim page (issue #8).
@@ -30,6 +42,14 @@ import { isCavosConfigured } from "@/lib/cavos-config";
  * The real mitigation is operational — these links are single-use and delivered
  * over the encrypted Waku notification (`notify/`), never posted somewhere
  * durable.
+ *
+ * ## Pending-claim discovery
+ *
+ * `PendingClaims` reads that same notification back (issue #35). It derives the
+ * topic and key from the secret using `payroll-notify` directly rather than a
+ * copy, so the payer's Node-side derivation and this browser-side one cannot
+ * drift apart. The secret never leaves the browser: it is used to derive a
+ * content topic and an ECIES key, and nothing else.
  */
 export default function ClaimPage({ params }: PageProps<"/claim/[secret]">) {
   const { secret } = use(params);
@@ -84,14 +104,7 @@ function ClaimConsole({ secret }: { secret: string }) {
       <button onClick={() => setNotice(SUBMIT_NOTICE)}>Claim payment</button>
       {notice && <p role="status">{notice}</p>}
 
-      <p>
-        <small>
-          Pending-claim discovery from the Waku notification (<code>notify/</code>)
-          is not wired into this page yet. The notification itself works and is
-          tested end-to-end against the live Waku fleet; what is missing is the
-          browser-side hook that reads it.
-        </small>
-      </p>
+      <PendingClaims secret={secret} />
     </main>
   );
 }
