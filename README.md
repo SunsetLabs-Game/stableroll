@@ -57,7 +57,7 @@ This repo is mid-build. Only claim the chains and legs that are real:
 | Starknet → Starknet fund + claim, via the pool | Done and tested locally. Not yet exercised against live Sepolia or mainnet infrastructure |
 | EVM claim leg (privacy-bridge) | Wired against the real API (`cashOut`, see `docs/evm-claim-coverage.md`). Not yet exercised against live testnet infrastructure |
 | Solana claim leg (NEAR Intents) | Connector implemented against the real 1-Click API (see `docs/solana-claim-coverage.md`). Route verified live — pinned asset IDs and a dry-run quote are re-checked by `npm run test:liquidity`. The end-to-end claim is **not** exercised: NEAR Intents has no testnet, so it needs mainnet funds and human sign-off |
-| Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Wired from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`) |
+| Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Sent from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`), and independently by `integration/src/commitment-listener.ts` polling `CommitmentFunded` for any commitment registered in the outbox ahead of time — so a commitment funded through a different path than `sepolia-run.ts` still gets notified once the chain confirms it (see `docs/adr-commitment-funded-listener.md`). The secret still has to reach the outbox from whoever funds the commitment; this is not a purely chain-driven notification |
 | Frontend app shell (`frontend/`) | Done — placeholder `/admin` and `/claim/[secret]` routes, zero business logic |
 | Cavos payer/recipient UX | Partial — sign-in wired against the real `@cavos/kit` v0.1.11 API on `/admin` and `/claim/[secret]`, dual-approval gate implemented and unit-tested. Submission is **not** wired: `privacy_invoke` accepts only the pool as caller, and that path needs a mainnet proving service that is not published. Waku pending-claim discovery now read by the page: `/claim/[secret]` queries Waku Store for a notification already sent and subscribes via Filter for one sent while it is open, reusing `notify/`'s derivation rather than a copy. Proven by a live-fleet round trip; an empty result is rendered as normal, not an error, since Store retention is finite |
 | Mainnet eligibility transactions | Done — 3 recorded in `strk20.json` and verified on-chain (`npm run verify:eligibility`). See `docs/mainnet-eligibility.md` |
@@ -86,7 +86,9 @@ claim-routing tree live in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 - **`notify`** — Waku ECIES key/topic derivation and encrypted claim
   notifications, keyed off the same commitment secret as the on-chain claim,
   never a Starknet address (see the package's `topics.ts`). Called from
-  `integration/src/sepolia-run.ts` after each successful `FundCommitment`.
+  `integration/src/sepolia-run.ts` after each successful `FundCommitment`,
+  and from `integration/src/commitment-listener.ts` for commitments funded
+  through any other path (see `docs/adr-commitment-funded-listener.md`).
   `integration/` depends on it via `file:../notify` (see
   `docs/adr-notify-package-boundary.md`).
 - **`integration/src/near-intents-connector.ts`** — the Solana claim leg:
