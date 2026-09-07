@@ -17,6 +17,8 @@ Built for the **STRK20 Private Sprint** (Starknet, 14–31 Aug 2026).
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 ![Status](https://img.shields.io/badge/status-work_in_progress-orange)
 
+🚀 **Live at [stableroll.vercel.app](https://stableroll.vercel.app)**
+
 ## Why payroll needs privacy
 
 A payroll run funded and claimed in the open on a public ledger leaks a
