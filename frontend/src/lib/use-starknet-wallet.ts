@@ -69,7 +69,13 @@ export function useStarknetWallet() {
   const signMessage = useCallback(
     async (message: string): Promise<string> => {
       if (!state.wallet) throw new Error("Wallet not connected.");
-      // wallet_signTypedData is the standard Starknet wallet RPC method
+      /**
+       * Use `string` (not `felt` / `shortstring`) for the message field.
+       * `felt` in Starknet typed data maps to Cairo's shortstring, which is
+       * capped at 31 ASCII characters. Our approval message is ~47 chars, so
+       * we use the `string` type which is unbounded and rendered clearly in
+       * ArgentX / Braavos signing dialogs.
+       */
       const sig = await state.wallet.request({
         type: "wallet_signTypedData",
         params: {
@@ -80,7 +86,7 @@ export function useStarknetWallet() {
               { name: "chainId", type: "shortstring" },
               { name: "revision", type: "shortstring" },
             ],
-            PayrollApproval: [{ name: "message", type: "felt" }],
+            PayrollApproval: [{ name: "message", type: "string" }],
           },
           primaryType: "PayrollApproval",
           domain: { name: "StableRoll", version: "1", chainId: "SN_MAIN", revision: "1" },
