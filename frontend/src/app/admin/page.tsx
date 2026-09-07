@@ -223,22 +223,35 @@ function AdminConsole() {
           ) : (
             <p role="status" className="dim" style={{ color: "var(--ok)" }}>Quorum reached. Funding may proceed.</p>
           )}
-          <div className="actions">
-            <button id="fund-btn" disabled={!quorumReached} className="btn">
-              Submit FundCommitment
+
+          {/* Show why submit is not yet live */}
+          <div style={{
+            marginTop: "var(--s-3)",
+            padding: "var(--s-3) var(--s-4)",
+            borderRadius: "var(--r-sm)",
+            background: "rgba(255,59,124,0.08)",
+            border: "1px solid rgba(255,59,124,0.25)",
+          }}>
+            <p style={{ fontSize: "var(--t-13)", color: "var(--fg-2)", lineHeight: "1.6" }}>
+              <strong style={{ color: "var(--hidden)" }}>⚠ Mainnet proving not yet available.</strong>{" "}
+              <code>Payroll.privacy_invoke</code> only accepts calls routed through the STRK20 Privacy Pool
+              via <code>InvokeExternal</code> inside a proved private transaction.
+              That path requires a proving service that StarkWare has not yet published for mainnet.
+              Once it is live, this button will submit the <code>FundCommitment</code> call.
+            </p>
+          </div>
+
+          <div className="actions" style={{ marginTop: "var(--s-3)" }}>
+            <button
+              id="fund-btn"
+              disabled
+              className="btn"
+              style={{ opacity: 0.4, cursor: "not-allowed" }}
+              title="Mainnet proving service not yet available"
+            >
+              Submit FundCommitment (proving service pending)
             </button>
           </div>
-        </div>
-
-        <div className="caveat" style={{ marginTop: "var(--s-5)" }}>
-          <p>
-            Submitting is intentionally inert here. <code>Payroll.privacy_invoke</code>{" "}
-            asserts its caller is the STRK20 pool and reverts{" "}
-            <code>CALLER_NOT_PRIVACY</code> for anyone else — the pool carries the call
-            through <code>InvokeExternal</code> inside a proved private transaction.
-            That path needs a proving service not yet published for mainnet.
-            See <code>src/lib/payroll-call.ts</code>.
-          </p>
         </div>
       </div>
     </main>
