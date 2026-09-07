@@ -34,7 +34,7 @@ fn setup() -> (IPayrollDispatcher, ContractAddress) {
 }
 
 /// The suite's standard approver pair. Distinct short strings, so their
-/// commitments are distinct too — which is what `OpenRun` requires.
+/// commitments are distinct too, which is what `OpenRun` requires.
 const APPROVER_A: felt252 = 'APPROVER-A';
 const APPROVER_B: felt252 = 'APPROVER-B';
 
@@ -221,7 +221,7 @@ fn test_underfunding_the_last_commitment_reverts() {
 }
 
 /// Once a run is fully funded it closes, and no extra recipient can be
-/// appended to it — the promised headcount is fixed at OpenRun.
+/// appended to it: the promised headcount is fixed at OpenRun.
 #[test]
 #[should_panic(expected: 'RUN_CLOSED')]
 fn test_cannot_fund_more_recipients_than_promised() {
@@ -298,7 +298,7 @@ fn test_open_run_rejects_zero_expected_total() {
 
 /// Attack 1 from the tracker issue: an attacker who guesses/learns a run_id
 /// the payer intends to use cannot pre-open it, because OpenRun requires
-/// run_id == compute_run_id(secret) — producing a valid call for a *chosen*
+/// run_id == compute_run_id(secret), producing a valid call for a *chosen*
 /// run_id requires knowing a secret that hashes to it, which the attacker does
 /// not have.
 #[test]
@@ -398,10 +398,10 @@ fn test_direct_caller_is_rejected() {
 }
 
 /// Pins the exact felt252 `compute_commitment_hash` produces for a fixed
-/// secret. `integration/src/config.ts`'s `computeCommitmentHash` asserts the
+/// secret. `integration/src/commitment.ts`'s `computeCommitmentHash` asserts the
 /// SAME literal in `integration/src/commitment-parity.test.ts`. If either side's
 /// domain tag, operand encoding, or hash function drifts, one of the two tests
-/// fails loudly — instead of the drift surfacing as commitments that are funded
+/// fails loudly, instead of the drift surfacing as commitments that are funded
 /// on-chain but permanently unclaimable (Claim reverting COMMITMENT_NOT_FOUND).
 #[test]
 fn test_commitment_hash_matches_typescript() {
@@ -688,7 +688,7 @@ fn test_fund_commitment_requires_the_second_approver() {
 }
 
 /// The acceptance criterion named in issue #31: one approver revealing the same
-/// secret twice must not pass the gate. It cannot, structurally — `ApproveRun`
+/// secret twice must not pass the gate. It cannot, structurally: `ApproveRun`
 /// advances at most one flag per call, and a given secret always matches the
 /// same slot, so re-revealing it only rewrites the flag it already set.
 #[test]
@@ -710,7 +710,7 @@ fn test_same_approver_twice_does_not_satisfy_quorum() {
             compute_approver_commitment(APPROVER_B),
         );
 
-    // Both calls succeed — approving is idempotent — but they are one identity
+    // Both calls succeed: approving is idempotent, but they are one identity
     // and must count once.
     approve(dispatcher, token, run_id, APPROVER_A);
     approve(dispatcher, token, run_id, APPROVER_A);
@@ -733,7 +733,7 @@ fn test_same_approver_twice_does_not_satisfy_quorum() {
 }
 
 /// The positive half: two distinct approvers unlock funding, and what the run
-/// stores is a commitment hash — never an address (CLAUDE.md §6).
+/// stores is a commitment hash, never an address (CLAUDE.md §6).
 #[test]
 fn test_two_distinct_approvers_unlock_funding() {
     let (dispatcher, token) = setup();
@@ -781,7 +781,7 @@ fn test_two_distinct_approvers_unlock_funding() {
 
 /// Acceptance criterion: a run missing its second approver can never reach
 /// `is_complete`. It cannot even be funded, so `funded_count` never leaves zero
-/// and `closed` never becomes true — asserted here after the revert rather than
+/// and `closed` never becomes true, asserted here after the revert rather than
 /// inferred from it.
 #[test]
 #[feature("safe_dispatcher")]
@@ -1170,7 +1170,7 @@ fn test_final_commitment_emits_run_closed() {
 
 /// The absence of `RunClosed` is itself the signal. A payer who omits a
 /// recipient never emits it, so an auditor reading only the log can tell the
-/// run was never fully funded — the same property `is_complete` encodes, now
+/// run was never fully funded: the same property `is_complete` encodes, now
 /// visible without reading storage.
 #[test]
 fn test_run_missing_a_recipient_never_emits_run_closed() {
@@ -1434,7 +1434,7 @@ fn test_commitment_funded_wire_layout_matches_typescript() {
     assert(*keys.at(0) == selector!("CommitmentFunded"), 'keys[0] = selector');
     // The same literal `integration/src/payroll-events.ts` pins for
     // hash.getSelectorFromName("CommitmentFunded"). Note this IS the right use
-    // of starknet_keccak — event keys are selectors. It is not the mistake
+    // of starknet_keccak: event keys are selectors. It is not the mistake
     // CLAUDE.md §3 warns about, which is using it for a *commitment* hash.
     assert(
         selector!("CommitmentFunded") == 210239575222622801988925347656546139608989566980615942258882279379756782329,

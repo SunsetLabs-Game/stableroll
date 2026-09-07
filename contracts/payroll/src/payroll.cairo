@@ -5,7 +5,7 @@ use starknet::ContractAddress;
 ///
 /// Deliberately contains NO payer address. `privacy_invoke` is only ever called
 /// by the privacy pool (see `CALLER_NOT_PRIVACY`), so `get_caller_address()` is
-/// always the pool — a stored "payer" could only ever be the pool's address.
+/// always the pool: a stored "payer" could only ever be the pool's address.
 /// Storing the *real* payer would also defeat the purpose of routing through the
 /// pool at all: it would publish the very link the pool exists to hide.
 ///
@@ -37,7 +37,7 @@ pub struct RunInfo {
     pub owner_commitment: felt252,
     /// The two approver commitments, fixed at `OpenRun` and required to be
     /// distinct. Like `owner_commitment` these are Poseidon hashes of a secret,
-    /// never addresses — see `docs/adr-dual-approval-quorum.md`.
+    /// never addresses, see `docs/adr-dual-approval-quorum.md`.
     pub approver_a_commitment: felt252,
     pub approver_b_commitment: felt252,
     /// Set by `ApproveRun` when the matching approver secret is revealed. Both
@@ -108,23 +108,23 @@ pub const PAYROLL_RUN_OWNER_TAG: felt252 = 'PAYROLL_RUN_OWNER_TAG:V1';
 pub const PAYROLL_APPROVER_TAG: felt252 = 'PAYROLL_APPROVER_TAG:V1';
 
 /// Mirrored byte-for-byte by `computeCommitmentHash` in
-/// `integration/src/config.ts`. Both operands are raw felt252 values — neither
-/// is pre-hashed. If you change this, change that, or every funded commitment
-/// becomes permanently unclaimable.
+/// `integration/src/commitment.ts`. Both operands are raw felt252 values,
+/// neither is pre-hashed. If you change this, change that, or every funded
+/// commitment becomes permanently unclaimable.
 pub fn compute_commitment_hash(secret: felt252) -> felt252 {
     core::poseidon::poseidon_hash_span([PAYROLL_COMMITMENT_TAG, secret].span())
 }
 
 /// `run_id` must equal this for the `OpenRun` caller's own `owner_secret`, so a
 /// squatter who does not know that secret cannot produce a valid `OpenRun` call
-/// for a `run_id` the legitimate payer intends to use — see
+/// for a `run_id` the legitimate payer intends to use, see
 /// `docs/adr-run-ownership.md`.
 pub fn compute_run_id(owner_secret: felt252) -> felt252 {
     core::poseidon::poseidon_hash_span([PAYROLL_RUN_ID_TAG, owner_secret].span())
 }
 
 /// Stored on `RunInfo` at `OpenRun`. A different domain tag from
-/// `compute_run_id` so that `run_id` being public never leaks this value —
+/// `compute_run_id` so that `run_id` being public never leaks this value:
 /// Poseidon is one-way, but keeping the two derivations in separate domains
 /// avoids relying on that alone.
 pub fn compute_run_owner_commitment(owner_secret: felt252) -> felt252 {
@@ -133,7 +133,7 @@ pub fn compute_run_owner_commitment(owner_secret: felt252) -> felt252 {
 
 /// Stored twice on `RunInfo` at `OpenRun`, once per approver. Its own domain
 /// tag, so an approver commitment can never collide with a run id, an owner
-/// commitment or a payment commitment derived from the same secret — a secret
+/// commitment or a payment commitment derived from the same secret: a secret
 /// reused across roles still yields four unrelated values.
 pub fn compute_approver_commitment(approver_secret: felt252) -> felt252 {
     core::poseidon::poseidon_hash_span([PAYROLL_APPROVER_TAG, approver_secret].span())
@@ -194,7 +194,7 @@ pub mod Payroll {
     ///   the run, not of a person.
     /// - **No `note_id` on `CommitmentClaimed`.** It is the one value in
     ///   `Claim`'s arguments that is *not* already in storage, and it would tie
-    ///   a claimed commitment to a specific note inside the pool — exactly the
+    ///   a claimed commitment to a specific note inside the pool, exactly the
     ///   linkage the pool exists to prevent.
     ///
     /// `run_id` is a key on all five so an indexer can follow one run, and
@@ -307,7 +307,7 @@ pub mod Payroll {
             match operation {
                 PayrollOperation::OpenRun => {
                     // A run is "absent" iff expected_count == 0, so a run may
-                    // never be opened with expected_count == 0 — it would be
+                    // never be opened with expected_count == 0: it would be
                     // indistinguishable from a run that was never opened, and
                     // every later FundCommitment would revert RUN_NOT_FOUND.
                     let existing = self.runs.read(run_id);
@@ -327,7 +327,7 @@ pub mod Payroll {
                     // Documented dual use, like `amount` standing in for
                     // expected_total above: on OpenRun these two carry the
                     // approver commitments. The payer never sends an approver
-                    // *secret* here — only the hashes the approvers handed over.
+                    // *secret* here, only the hashes the approvers handed over.
                     let approver_a_commitment = commitment_hash;
                     let approver_b_commitment = note_id;
                     assert(
@@ -452,7 +452,7 @@ pub mod Payroll {
                     assert(secret.is_non_zero(), errors::ZERO_APPROVER_SECRET);
 
                     // Approver identity is a commitment preimage, never an
-                    // address — the same reason RunInfo stores no payer. The
+                    // address: the same reason RunInfo stores no payer. The
                     // contract learns that *someone* holding this secret
                     // approved, and nothing more.
                     let approval = super::compute_approver_commitment(secret);
@@ -498,7 +498,7 @@ pub mod Payroll {
                     run.total_paid += entry.amount;
                     self.runs.write(entry.run_id, run);
 
-                    // Deliberately carries no note_id and no recipient address —
+                    // Deliberately carries no note_id and no recipient address,
                     // see the note on the Event enum.
                     self
                         .emit(

@@ -1,4 +1,4 @@
-# superpowers workflow artifacts — specs, plans, and SDD workspaces never get committed
+# superpowers workflow artifacts: specs, plans, and SDD workspaces never get committed
 **/superpowers/**
 .superpowers/
 
@@ -23,6 +23,9 @@ media/demo/out/*
 .env
 .env.local
 .env.*.local
+
+# stale git worktrees (may contain pre-hardening contract snapshots)
+.claude/worktrees/
 
 # OS
 .DS_Store

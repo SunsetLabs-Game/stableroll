@@ -13,7 +13,7 @@ else is built. Deadline **31 Aug 2026, 23:59 UTC**.
 
 ## Status
 
-**Met — 3 of 3 banked.** All three verified on mainnet: each exists, succeeded,
+**Met: 3 of 3 banked.** All three verified on mainnet: each exists, succeeded,
 and carries an event emitted by the pool. `npm run verify:eligibility` is green.
 
 Run `cd integration && npm run verify:eligibility` for the current state. It
@@ -23,20 +23,21 @@ the pool.
 
 ## The transactions
 
-Fill this in as each one lands. The hash goes in `strk20.json` too — the
+Fill this in as each one lands. The hash goes in `strk20.json` too; the
 verifier reads it from there, not from this table.
 
 | # | Hash | What it proves | Voyager |
 |---|------|----------------|---------|
 | 1 | `0x044b5d46…2110b9` | Viewing key registered **and** STRK shielded, in one transaction: a `ViewingKeySet` and a `Deposit` event, 4 pool events of 17 total. Block 13964885. | [tx](https://voyager.online/tx/0x044b5d46090d34321729e253aea555b10de5f0ae81ff38fce0081048902110b9) |
-| 2 | `0x04fe7d82…e2aa6` | A second shield into the pool — `Deposit`, 3 pool events of 16 total. Block 13965041. | [tx](https://voyager.online/tx/0x04fe7d82f82ecb150f595d4a5b519d8dbeb8761d64e01644193b310019ee2aa6) |
-| 3 | `0x077f3f2f…5c42f` | A third shield into the pool — `Deposit`, 3 pool events of 16 total. Block 13965191. | [tx](https://voyager.online/tx/0x077f3f2fef3675148e41b712ea9ede30e411c6f50a490ba91c6640ae6575c42f) |
+| 2 | `0x04fe7d82…e2aa6` | A second shield into the pool: `Deposit`, 3 pool events of 16 total. Block 13965041. | [tx](https://voyager.online/tx/0x04fe7d82f82ecb150f595d4a5b519d8dbeb8761d64e01644193b310019ee2aa6) |
+| 3 | `0x077f3f2f…5c42f` | A third shield into the pool: `Deposit`, 3 pool events of 16 total. Block 13965191. | [tx](https://voyager.online/tx/0x077f3f2fef3675148e41b712ea9ede30e411c6f50a490ba91c6640ae6575c42f) |
 
 All three were performed from a privacy-enabled wallet (Ready) on `SN_MAIN`,
-not through StableRoll's own code. That is what this gate asks for — the Day-0
-guide frames it as proving you can reach the pool "before you write any code" —
-but it is worth stating plainly: **these transactions establish eligibility,
-they do not demonstrate StableRoll.**
+not through StableRoll's own code. That is what this gate asks for: the
+sprint organizers' Day-0 onboarding guide (external to this repo, not
+committed here) frames it as proving you can reach the pool "before you write
+any code". It is worth stating plainly: **these transactions establish
+eligibility, they do not demonstrate StableRoll.**
 
 ## Payroll contract (mainnet)
 
@@ -59,10 +60,27 @@ This deploys the contract; it does not run a payroll through it. Submitting a
 real run is separate (blocked on the mainnet proving path, see issue #34) and
 should not be read as demonstrated by this entry alone.
 
+**Known gap, tracked as [#41](https://github.com/SunsetLabs-Game/stableroll/issues/41):**
+this deployed class predates the on-chain dual-approval quorum that landed in
+#31 (`ApproveRun`, the `approver_a_commitment`/`approver_b_commitment` fields
+on `RunInfo`, the `QUORUM_NOT_MET` check). A `FundCommitment` against this
+address succeeds with a single approver, exactly the hole #31 closed in
+source. This is a hard mismatch between the deployed manifest and the current
+source/tests/docs, not a rounding error: do not describe this deployment as
+enforcing the quorum until #41 lands. Verify the mismatch yourself rather than
+trusting this paragraph: `cd contracts/payroll && scarb build && sncast utils
+class-hash --sierra-file target/dev/payroll_Payroll.contract_class.json`
+produces `0x0032bb6f7cdcd730569e7c9baaba188bf8f7cf48f611d7db7c315440b82ed871`
+as of 2026-09-07, which does not match the deployed class hash above.
+`Payroll` has no upgrade path (no `replace_class_syscall`, no proxy), so
+closing this requires a fresh declare and deploy, not an upgrade, with the
+same human-confirmation requirement as any mainnet transaction (CLAUDE.md
+§4 rule 3).
+
 Transaction 1 covers Day-0 steps 1 and 2 together: a privacy-enabled wallet
 registers the viewing key automatically on first use, which the STRK20 docs
 describe as "wallets handle registration on first use". The event selectors
-were decoded to confirm this rather than inferred from the event count —
+were decoded to confirm this rather than inferred from the event count:
 `0x1321a49…` is `ViewingKeySet`, `0x9149d21…` is `Deposit`.
 
 Transactions 2 and 3 are further shields rather than a private transfer and a
@@ -76,13 +94,15 @@ here because it was not done.
 Use the **hosted app at `strk20.starknet.io/app`**, which handles registration
 and shielding through the UI.
 
-This is not just the lower-risk option, it is the intended one. Upstream
-`starkience/strk20-hackathon#31` ("the starter kit does not ship Sepolia
-proving or discovery endpoints") was closed as completed on 2026-08-15, and the
-resolution is that mainnet goes through the **Wallet API route**
+This is not just the lower-risk option. It is the intended one. Upstream issue
+`strk20-hackathon#31` in StarkWare's own `starkience/strk20-hackathon` repo
+(unrelated to this repo's own issue #31, the dual-approval quorum; "the starter
+kit does not ship Sepolia proving or discovery endpoints") was closed as
+completed on 2026-08-15, and the resolution is that mainnet goes through the
+**Wallet API route**
 (`WalletAccountV6`): the user's own wallet performs the proving and the
 discovery. There are no separate mainnet prover or discovery URLs to supply,
-and self-hosting `starknet_transaction_prover` is not expected of sprint teams —
+and self-hosting `starknet_transaction_prover` is not expected of sprint teams:
 its README asks for a 48 vCPU / 96 GB machine.
 
 So: connect a wallet, and let it do the work. Do not go looking for endpoint
@@ -101,8 +121,8 @@ configuration; there isn't any on this path.
   this repo.
 - **The 10-block rule** (CLAUDE.md §4 rule 5), but only where proofs are
   involved. Registering a viewing key and shielding are ordinary public
-  transactions that carry no proof — the Day-0 guide is explicit that "what
-  needs no proof at all: registering a viewing key, and shielding" — so those
+  transactions that carry no proof: the Day-0 guide is explicit that "what
+  needs no proof at all: registering a viewing key, and shielding", so those
   can be chained without waiting. The rule bites when you *spend* privately:
   the SDK sets `provingBlockId = currentBlock - 10`, so a note created moments
   ago cannot be spent yet. Doing so fails in a way that looks exactly like a
@@ -113,14 +133,14 @@ configuration; there isn't any on this path.
 Two layers, deliberately split so the offline one can run on a clean checkout
 with no credentials and no network:
 
-**Shape** — `integration/src/mainnet-eligibility.ts`, covered by
+**Shape**: `integration/src/mainnet-eligibility.ts`, covered by
 `mainnet-eligibility.test.ts` and part of `npm run test:offline`. It validates
 that every recorded hash is a well-formed non-zero felt and that no hash is
 recorded twice. Duplicates are compared numerically, so padding one
 transaction out to three entries (`0xdeadbeef`, `0x0deadbeef`, `0x00deadbeef`)
 is caught rather than counted as three.
 
-**On chain** — `mainnet-eligibility-onchain.test.ts`, run with
+**On chain**: `mainnet-eligibility-onchain.test.ts`, run with
 `npm run verify:eligibility`. For each hash it fetches the receipt from a
 mainnet RPC, requires `execution_status == SUCCEEDED`, and requires at least
 one event whose `from_address` is the pool. Addresses are compared as BigInt,
@@ -128,7 +148,7 @@ because the same address legitimately appears as both `0x040337…` and
 `0x40337…` depending on the source.
 
 That second file also pins two real historical mainnet transactions and asserts
-the checker classifies them correctly — one that touched the pool, one that did
+the checker classifies them correctly: one that touched the pool, one that did
 not. Without that negative case the check could be silently vacuous: a bug that
 returned no event addresses would reject every hash, and an inverted comparison
 would accept every hash, and both would look identical to "the manifest is
@@ -144,5 +164,5 @@ The default endpoint is `https://rpc.starknet.lava.build`, which the Day-0
 guide publishes as verified against the live network. Override it with
 `MAINNET_RPC_URL` if it rate-limits; `https://api.cartridge.gg/x/starknet/mainnet`
 also works keyless. Do not reach for
-`starknet-mainnet.public.blastapi.io` — it no longer serves Starknet at all and
+`starknet-mainnet.public.blastapi.io`: it no longer serves Starknet at all and
 answers every call with "Blast API is no longer available".
