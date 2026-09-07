@@ -431,7 +431,7 @@ function FlowDiagram() {
             fill="none" stroke="var(--hidden)" strokeWidth="2.5" className="particle-path" style={{ animationDelay: delay }} strokeLinecap="round" />
           
           <rect x="410" y={y} width="140" height="48" rx="12"
-            fill="var(--panel-2)" stroke="var(--rule-2)" strokeWidth="1.5" transition="all 0.3s" />
+            fill="var(--panel-2)" stroke="var(--rule-2)" strokeWidth="1.5" style={{ transition: "all 0.3s" }} />
           <circle cx="430" cy={y + 24} r="5" fill="var(--hidden)" className="glow-hidden" />
           <text x="445" y={y + 28} fill="var(--fg)" fontSize="12" fontWeight="600">
             {label}
