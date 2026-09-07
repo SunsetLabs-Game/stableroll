@@ -65,7 +65,6 @@ function AdminConsole() {
 
   const approvers = distinctApprovers(approvals, runId);
   const blocked = fundingBlockedReason(approvals, runId);
-  const quorumReached = hasQuorum(approvals, runId);
 
   async function approve() {
     setError(null);
