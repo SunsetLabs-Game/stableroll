@@ -29,6 +29,33 @@ export const CAVOS_APP_SALT = process.env.NEXT_PUBLIC_CAVOS_APP_SALT ?? "";
  */
 export const CAVOS_NETWORK = process.env.NEXT_PUBLIC_CAVOS_NETWORK === "testnet" ? "testnet" : "mainnet";
 
+/**
+ * Paymaster key, which `@cavos/kit`'s own types describe as **"Required for
+ * Starknet"** — it sponsors the deploy and every execute. Without it a signed-in
+ * user gets a wallet that cannot transact, which looks like a bug in this app
+ * rather than a missing credential.
+ *
+ * It carries `NEXT_PUBLIC_` because the SDK that consumes it runs in the
+ * browser, so there is no arrangement in which it stays hidden. Be clear-eyed
+ * about what that means: anyone can read it out of the bundle and spend against
+ * the sponsorship budget it unlocks. Scope and cap it in the Cavos dashboard,
+ * and rotate it if it ever paid for something you did not recognise. This is
+ * the one value here that is not merely a public identifier.
+ */
+export const CAVOS_PAYMASTER_API_KEY = process.env.NEXT_PUBLIC_CAVOS_PAYMASTER_API_KEY ?? "";
+
+/**
+ * Where Cavos sends the user back after Google/Apple OAuth.
+ *
+ * `@cavos/kit`'s provider takes a `redirectUri` and exposes `handleCallback`;
+ * neither was wired, so the round trip had nowhere to land. Falls back to the
+ * current origin so preview deployments and `localhost` work without their own
+ * variable — only the deployed origin needs pinning, because Cavos validates it
+ * against the allow-list in the dashboard.
+ */
+export const CAVOS_REDIRECT_URI =
+  (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "") + "/auth/callback";
+
 export const CAVOS_ENVIRONMENT =
   process.env.NEXT_PUBLIC_CAVOS_ENVIRONMENT === "development" ? "development" : "production";
 
@@ -48,6 +75,13 @@ export const cavosConfig: CavosConfig = {
   environment: CAVOS_ENVIRONMENT,
   chains: ["starknet"],
   defaultChain: "starknet",
+  ...(CAVOS_PAYMASTER_API_KEY ? { paymasterApiKey: CAVOS_PAYMASTER_API_KEY } : {}),
+  // Optional on web per the SDK's own note, but left implicit it resolves to
+  // whatever Cavos infers — which would not be the /auth/callback route this
+  // app actually implements. Set only when an origin is configured, so preview
+  // and localhost builds keep the SDK's inference rather than being pinned to
+  // the production domain.
+  ...(process.env.NEXT_PUBLIC_SITE_URL ? { redirectUri: CAVOS_REDIRECT_URI } : {}),
 };
 
 /**

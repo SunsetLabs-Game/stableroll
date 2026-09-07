@@ -29,12 +29,14 @@ import {
  * notified, which is the bug this component would otherwise ship with.
  */
 export default function PendingClaims({ secret }: { secret: string }) {
-  const [state, setState] = useState<ClaimLookupState>({ status: "idle" });
+  const [state, setState] = useState<ClaimLookupState>(() => {
+    const parsed = parseClaimSecret(secret);
+    return parsed === null ? { status: "invalid-secret" } : { status: "idle" };
+  });
 
   useEffect(() => {
     const parsed = parseClaimSecret(secret);
     if (parsed === null) {
-      setState({ status: "invalid-secret" });
       return;
     }
 

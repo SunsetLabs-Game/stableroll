@@ -56,18 +56,32 @@ export default function ClaimPage({ params }: PageProps<"/claim/[secret]">) {
   return isCavosConfigured() ? <ClaimConsole secret={secret} /> : <UnconfiguredClaim secret={secret} />;
 }
 
+/**
+ * Pending-claim discovery does NOT depend on Cavos — it needs the secret from
+ * the URL and nothing else. Keeping it outside the sign-in gate means a
+ * recipient can confirm a payment is waiting for them before, and even without,
+ * signing in. On a deployment with no Cavos credentials this is the only part
+ * of the page that still does real work.
+ */
 function UnconfiguredClaim({ secret }: { secret: string }) {
   return (
-    <main>
+    <main className="page">
       <h1>Claim</h1>
       <p>
-        Cavos is not configured, so this page cannot sign in a recipient. Set{" "}
-        <code>NEXT_PUBLIC_CAVOS_APP_ID</code> and{" "}
-        <code>NEXT_PUBLIC_CAVOS_APP_SALT</code> and reload.
+        Claim secret from this link: <code>{redact(secret)}</code>
       </p>
-      <p>
-        Claim secret present in the URL: <code>{redact(secret)}</code>
-      </p>
+
+      <PendingClaims secret={secret} />
+
+      <div className="note">
+        <p>
+          Sign-in is unavailable on this deployment: it needs{" "}
+          <code>NEXT_PUBLIC_CAVOS_APP_ID</code> and{" "}
+          <code>NEXT_PUBLIC_CAVOS_APP_SALT</code>, which are per-deployment
+          credentials and deliberately not committed. Looking up your payment
+          above works without them.
+        </p>
+      </div>
     </main>
   );
 }
@@ -78,21 +92,25 @@ function ClaimConsole({ secret }: { secret: string }) {
 
   if (!isAuthenticated) {
     return (
-      <main>
+      <main className="page">
         <h1>Claim</h1>
         <p>
           Sign in to claim your payment into a Starknet wallet. No seed phrase,
           and no need to already hold one.
         </p>
-        <button onClick={openModal} disabled={isLoading}>
-          {isLoading ? "Connecting…" : "Sign in to claim"}
-        </button>
+        <div className="actions">
+          <button onClick={openModal} disabled={isLoading} className="button">
+            {isLoading ? "Connecting…" : "Sign in to claim"}
+          </button>
+        </div>
+
+        <PendingClaims secret={secret} />
       </main>
     );
   }
 
   return (
-    <main>
+    <main className="page">
       <h1>Claim</h1>
       <p>
         Claiming into <code>{address}</code>.
@@ -101,8 +119,16 @@ function ClaimConsole({ secret }: { secret: string }) {
         Claim secret: <code>{redact(secret)}</code>
       </p>
 
-      <button onClick={() => setNotice(SUBMIT_NOTICE)}>Claim payment</button>
-      {notice && <p role="status">{notice}</p>}
+      <div className="actions">
+        <button onClick={() => setNotice(SUBMIT_NOTICE)} className="button">
+          Claim payment
+        </button>
+      </div>
+      {notice && (
+        <div className="note">
+          <p role="status">{notice}</p>
+        </div>
+      )}
 
       <PendingClaims secret={secret} />
     </main>

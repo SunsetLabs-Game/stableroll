@@ -1,0 +1,11 @@
+# Only `frontend/` and its `file:../notify` dependency take part in the Vercel
+# build (see vercel.json). Everything else is Cairo, integration tests, the demo
+# video and generated diagrams — none of it is read by `next build`, and
+# uploading it made the first deploy push 85 MB into the build container.
+contracts/
+integration/
+diagrams/
+media/
+docs/
+.github/
+*.md

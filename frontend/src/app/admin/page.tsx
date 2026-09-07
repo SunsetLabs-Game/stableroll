@@ -28,8 +28,8 @@ export default function AdminPage() {
 
 function UnconfiguredNotice() {
   return (
-    <main>
-      <h1>Admin</h1>
+    <main className="page">
+      <h1>Run a payroll</h1>
       <p>
         Cavos is not configured. Set <code>NEXT_PUBLIC_CAVOS_APP_ID</code> and{" "}
         <code>NEXT_PUBLIC_CAVOS_APP_SALT</code> from the Cavos dashboard, then
@@ -77,22 +77,29 @@ function AdminConsole() {
 
   if (!isAuthenticated) {
     return (
-      <main>
-        <h1>Admin</h1>
-        <p>Sign in to open and fund a payroll run. No seed phrase involved.</p>
-        <button onClick={openModal} disabled={isLoading}>
-          {isLoading ? "Connecting…" : "Sign in"}
-        </button>
+      <main className="page">
+        <h1>Run a payroll</h1>
+        <p className="lede">
+          Sign in to open and fund a payroll run. No seed phrase involved.
+        </p>
+        <div className="actions">
+          <button onClick={openModal} disabled={isLoading} className="button">
+            {isLoading ? "Connecting…" : "Sign in"}
+          </button>
+        </div>
       </main>
     );
   }
 
   return (
-    <main>
-      <h1>Admin</h1>
-      <p>
-        Signed in as <code>{user?.email ?? user?.userId}</code> — <code>{address}</code>{" "}
-        <button onClick={logout}>Sign out</button>
+    <main className="page">
+      <h1>Run a payroll</h1>
+      <p className="muted">
+        Signed in as <code>{user?.email ?? user?.userId}</code> —{" "}
+        <code>{address}</code>{" "}
+        <button onClick={logout} className="button button-secondary">
+          Sign out
+        </button>
       </p>
 
       <h2>Payroll run</h2>
@@ -111,8 +118,16 @@ function AdminConsole() {
         replaces the first rather than counting twice.
       </p>
 
-      <button onClick={approve}>Approve as {address?.slice(0, 10)}…</button>
-      {error && <p role="alert">{error}</p>}
+      <div className="actions">
+        <button onClick={approve} className="button">
+          Approve as {address?.slice(0, 10)}…
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="muted">
+          {error}
+        </p>
+      )}
 
       <ul>
         {approvals.map((approval) => (
@@ -128,10 +143,14 @@ function AdminConsole() {
       ) : (
         <p role="status">Quorum reached. Funding may proceed.</p>
       )}
-      <button disabled={!quorumReached}>Submit FundCommitment</button>
+      <div className="actions">
+        <button disabled={!quorumReached} className="button">
+          Submit FundCommitment
+        </button>
+      </div>
 
-      <p>
-        <small>
+      <div className="note">
+        <p>
           Submitting is intentionally inert here. <code>Payroll.privacy_invoke</code>{" "}
           asserts its caller is the STRK20 pool and reverts{" "}
           <code>CALLER_NOT_PRIVACY</code> for anyone else, so a Cavos account
@@ -139,8 +158,8 @@ function AdminConsole() {
           <code>InvokeExternal</code> inside a proved private transaction. That
           path needs a proving service, which is not published for mainnet yet.
           See <code>src/lib/payroll-call.ts</code>.
-        </small>
-      </p>
+        </p>
+      </div>
     </main>
   );
 }

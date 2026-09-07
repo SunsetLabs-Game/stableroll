@@ -29,3 +29,4 @@ media/demo/out/*
 
 # OS
 .DS_Store
+.vercel
