@@ -29,16 +29,18 @@ export default function AdminPage() {
 function UnconfiguredNotice() {
   return (
     <main className="page">
-      <h1>Run a payroll</h1>
-      <p>
-        Cavos is not configured. Set <code>NEXT_PUBLIC_CAVOS_APP_ID</code> and{" "}
-        <code>NEXT_PUBLIC_CAVOS_APP_SALT</code> from the Cavos dashboard, then
-        reload.
-      </p>
-      <p>
-        Both are per-deployment credentials and are deliberately not committed,
-        so a clean checkout renders this notice instead of failing to build.
-      </p>
+      <div className="panel" style={{ padding: 'var(--s-4)', marginTop: 'var(--s-4)' }}>
+        <h1>Run a payroll</h1>
+        <p style={{ marginTop: 'var(--s-2)', color: 'var(--fg-2)' }}>
+          Cavos is not configured. Set <code>NEXT_PUBLIC_CAVOS_APP_ID</code> and{" "}
+          <code>NEXT_PUBLIC_CAVOS_APP_SALT</code> from the Cavos dashboard, then
+          reload.
+        </p>
+        <p style={{ marginTop: 'var(--s-2)', color: 'var(--fg-3)' }}>
+          Both are per-deployment credentials and are deliberately not committed,
+          so a clean checkout renders this notice instead of failing to build.
+        </p>
+      </div>
     </main>
   );
 }
@@ -78,14 +80,16 @@ function AdminConsole() {
   if (!isAuthenticated) {
     return (
       <main className="page">
-        <h1>Run a payroll</h1>
-        <p className="lede">
-          Sign in to open and fund a payroll run. No seed phrase involved.
-        </p>
-        <div className="actions">
-          <button onClick={openModal} disabled={isLoading} className="button">
-            {isLoading ? "Connecting…" : "Sign in"}
-          </button>
+        <div className="panel" style={{ padding: 'var(--s-5)', textAlign: 'center', marginTop: 'var(--s-6)' }}>
+          <h1>Run a payroll</h1>
+          <p className="lead" style={{ margin: 'var(--s-3) auto' }}>
+            Sign in to open and fund a payroll run. No seed phrase involved.
+          </p>
+          <div className="actions" style={{ justifyContent: 'center' }}>
+            <button onClick={openModal} disabled={isLoading} className="btn">
+              {isLoading ? "Connecting…" : "Sign in to Cavos"}
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -93,41 +97,49 @@ function AdminConsole() {
 
   return (
     <main className="page">
-      <h1>Run a payroll</h1>
-      <p className="muted">
-        Signed in as <code>{user?.email ?? user?.userId}</code> —{" "}
-        <code>{address}</code>{" "}
-        <button onClick={logout} className="button button-secondary">
-          Sign out
-        </button>
-      </p>
+      <div className="panel" style={{ padding: 'var(--s-4)', marginTop: 'var(--s-4)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1>Run a payroll</h1>
+            <p className="dim" style={{ marginTop: '0.5rem' }}>
+              Signed in as <code>{user?.email ?? user?.userId}</code> — <code>{address}</code>
+            </p>
+          </div>
+          <button onClick={logout} className="btn btn-ghost" style={{ padding: '0.5rem 1rem', fontSize: 'var(--t-12)' }}>
+            Sign out
+          </button>
+        </div>
 
-      <h2>Payroll run</h2>
-      <label>
-        Run id{" "}
-        <input value={runId} onChange={(event) => setRunId(event.target.value)} />
-      </label>
+        <div style={{ marginTop: 'var(--s-5)' }}>
+          <h2>Payroll run</h2>
+          <label style={{ marginTop: 'var(--s-2)' }}>
+            Run id{" "}
+            <input type="text" value={runId} onChange={(event) => setRunId(event.target.value)} />
+          </label>
+        </div>
 
-      <h2>
-        Approvals ({approvers.length} of {REQUIRED_APPROVALS})
-      </h2>
-      <p>
-        Two <strong>distinct</strong> approvers must sign before funding. Each
-        approval is a signature over a message naming this run, so it cannot be
-        replayed onto another run, and a second signature from the same wallet
-        replaces the first rather than counting twice.
-      </p>
+        <div style={{ marginTop: 'var(--s-5)' }}>
+          <h2>
+            Approvals ({approvers.length} of {REQUIRED_APPROVALS})
+          </h2>
+          <p className="dim" style={{ maxWidth: '60ch' }}>
+            Two <strong>distinct</strong> approvers must sign before funding. Each
+            approval is a signature over a message naming this run, so it cannot be
+            replayed onto another run, and a second signature from the same wallet
+            replaces the first rather than counting twice.
+          </p>
 
-      <div className="actions">
-        <button onClick={approve} className="button">
-          Approve as {address?.slice(0, 10)}…
-        </button>
-      </div>
-      {error && (
-        <p role="alert" className="muted">
-          {error}
-        </p>
-      )}
+          <div className="actions">
+            <button onClick={approve} className="btn">
+              Approve as {address?.slice(0, 10)}…
+            </button>
+          </div>
+          {error && (
+            <p role="alert" style={{ color: 'var(--hidden)', marginTop: 'var(--s-2)' }}>
+              {error}
+            </p>
+          )}
+        </div>
 
       <ul>
         {approvals.map((approval) => (
@@ -137,19 +149,21 @@ function AdminConsole() {
         ))}
       </ul>
 
-      <h2>Funding</h2>
-      {blocked ? (
-        <p role="status">{blocked}</p>
-      ) : (
-        <p role="status">Quorum reached. Funding may proceed.</p>
-      )}
-      <div className="actions">
-        <button disabled={!quorumReached} className="button">
-          Submit FundCommitment
-        </button>
+      <div style={{ marginTop: 'var(--s-5)' }}>
+        <h2>Funding</h2>
+        {blocked ? (
+          <p role="status" className="dim" style={{ color: 'var(--hidden)' }}>{blocked}</p>
+        ) : (
+          <p role="status" className="dim" style={{ color: 'var(--ok)' }}>Quorum reached. Funding may proceed.</p>
+        )}
+        <div className="actions">
+          <button disabled={!quorumReached} className="btn">
+            Submit FundCommitment
+          </button>
+        </div>
       </div>
 
-      <div className="note">
+      <div className="caveat" style={{ marginTop: 'var(--s-5)' }}>
         <p>
           Submitting is intentionally inert here. <code>Payroll.privacy_invoke</code>{" "}
           asserts its caller is the STRK20 pool and reverts{" "}
@@ -159,6 +173,7 @@ function AdminConsole() {
           path needs a proving service, which is not published for mainnet yet.
           See <code>src/lib/payroll-call.ts</code>.
         </p>
+      </div>
       </div>
     </main>
   );

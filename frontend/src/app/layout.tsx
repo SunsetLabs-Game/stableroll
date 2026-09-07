@@ -28,6 +28,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="site-header">
           <div className="shell">
             <Link href="/" className="wordmark">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="brand-logo">
+                <defs>
+                  <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="var(--seen)" />
+                    <stop offset="100%" stopColor="var(--hidden)" />
+                  </linearGradient>
+                </defs>
+                <path d="M12 2 L22 7 V17 L12 22 L2 17 V7 L12 2 Z" stroke="url(#brand-grad)" strokeWidth="2.5" strokeLinejoin="round" />
+                <path d="M12 7 V22 M2 7 L12 12 L22 7" stroke="url(#brand-grad)" strokeWidth="2" strokeLinejoin="round" opacity="0.6" />
+                <circle cx="12" cy="12" r="3" fill="var(--seen)" style={{ filter: 'drop-shadow(0 0 4px var(--seen))' }} />
+              </svg>
               StableRoll
             </Link>
             <nav>

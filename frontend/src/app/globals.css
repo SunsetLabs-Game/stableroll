@@ -190,20 +190,23 @@ a:hover {
 
 .wordmark {
   color: var(--fg);
-  font-size: var(--t-14);
-  font-weight: 600;
+  font-size: var(--t-16);
+  font-weight: 700;
   letter-spacing: 0.02em;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
 }
 
-.wordmark::before {
-  content: "";
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 5px;
-  background: linear-gradient(135deg, var(--seen), var(--hidden));
+.brand-logo {
+  filter: drop-shadow(0 4px 8px var(--seen-dim));
+  transition: transform 0.3s cubic-bezier(0.22, 0.68, 0.28, 1), filter 0.3s ease;
+}
+
+.wordmark:hover .brand-logo {
+  transform: rotate(15deg) scale(1.1);
+  filter: drop-shadow(0 4px 12px var(--seen));
 }
 
 .wordmark:hover {
@@ -851,39 +854,53 @@ ol:not(.flow) {
   color: var(--fg-2);
 }
 
+/* ---------- forms & inputs ---------- */
+
 form {
-  margin-top: var(--s-4);
+  margin-top: var(--s-3);
+  display: grid;
+  gap: var(--s-3);
 }
 
 label {
   display: block;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: var(--t-12);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--fg-3);
-  margin-bottom: var(--s-1);
-}
-
-input[type="text"] {
-  width: 100%;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--rule-2);
-  border-radius: var(--r-sm);
-  background: var(--panel);
-  color: var(--fg);
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: var(--t-13);
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.02em;
 }
 
-input[type="text"]::placeholder {
+input[type="text"],
+input[type="number"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--rule-2);
+  background: rgba(16, 18, 38, 0.4);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--t-14);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+input:focus-visible {
+  outline: none;
+  border-color: var(--seen);
+  background: rgba(16, 18, 38, 0.8);
+  box-shadow: 0 0 0 2px var(--seen-dim), 0 0 12px var(--seen-dim);
+}
+
+input::placeholder {
   color: var(--fg-3);
 }
 
-input[type="text"]:focus {
-  border-color: var(--seen);
-  outline: none;
+.page .actions {
+  margin-top: var(--s-2);
 }
+
 
 dl:not(.ledger) {
   display: grid;

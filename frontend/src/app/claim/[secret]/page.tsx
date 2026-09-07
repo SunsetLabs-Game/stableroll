@@ -66,21 +66,23 @@ export default function ClaimPage({ params }: PageProps<"/claim/[secret]">) {
 function UnconfiguredClaim({ secret }: { secret: string }) {
   return (
     <main className="page">
-      <h1>Claim</h1>
-      <p>
-        Claim secret from this link: <code>{redact(secret)}</code>
-      </p>
-
-      <PendingClaims secret={secret} />
-
-      <div className="note">
-        <p>
-          Sign-in is unavailable on this deployment: it needs{" "}
-          <code>NEXT_PUBLIC_CAVOS_APP_ID</code> and{" "}
-          <code>NEXT_PUBLIC_CAVOS_APP_SALT</code>, which are per-deployment
-          credentials and deliberately not committed. Looking up your payment
-          above works without them.
+      <div className="panel" style={{ padding: 'var(--s-5)', marginTop: 'var(--s-4)' }}>
+        <h1>Claim</h1>
+        <p className="dim" style={{ marginTop: 'var(--s-2)' }}>
+          Claim secret from this link: <code>{redact(secret)}</code>
         </p>
+
+        <PendingClaims secret={secret} />
+
+        <div className="caveat" style={{ marginTop: 'var(--s-5)' }}>
+          <p>
+            Sign-in is unavailable on this deployment: it needs{" "}
+            <code>NEXT_PUBLIC_CAVOS_APP_ID</code> and{" "}
+            <code>NEXT_PUBLIC_CAVOS_APP_SALT</code>, which are per-deployment
+            credentials and deliberately not committed. Looking up your payment
+            above works without them.
+          </p>
+        </div>
       </div>
     </main>
   );
@@ -93,44 +95,52 @@ function ClaimConsole({ secret }: { secret: string }) {
   if (!isAuthenticated) {
     return (
       <main className="page">
-        <h1>Claim</h1>
-        <p>
-          Sign in to claim your payment into a Starknet wallet. No seed phrase,
-          and no need to already hold one.
-        </p>
-        <div className="actions">
-          <button onClick={openModal} disabled={isLoading} className="button">
-            {isLoading ? "Connecting…" : "Sign in to claim"}
-          </button>
+        <div className="panel" style={{ padding: 'var(--s-5)', textAlign: 'center', marginTop: 'var(--s-6)' }}>
+          <h1>Claim</h1>
+          <p className="lead" style={{ margin: 'var(--s-3) auto' }}>
+            Sign in to claim your payment into a Starknet wallet. No seed phrase,
+            and no need to already hold one.
+          </p>
+          <div className="actions" style={{ justifyContent: 'center' }}>
+            <button onClick={openModal} disabled={isLoading} className="btn">
+              {isLoading ? "Connecting…" : "Sign in to claim"}
+            </button>
+          </div>
+          
+          <div style={{ marginTop: 'var(--s-5)', textAlign: 'left' }}>
+            <PendingClaims secret={secret} />
+          </div>
         </div>
-
-        <PendingClaims secret={secret} />
       </main>
     );
   }
 
   return (
     <main className="page">
-      <h1>Claim</h1>
-      <p>
-        Claiming into <code>{address}</code>.
-      </p>
-      <p>
-        Claim secret: <code>{redact(secret)}</code>
-      </p>
+      <div className="panel" style={{ padding: 'var(--s-4)', marginTop: 'var(--s-4)' }}>
+        <h1>Claim</h1>
+        <p className="dim" style={{ marginTop: 'var(--s-2)' }}>
+          Claiming into <code>{address}</code>.
+        </p>
+        <p className="dim">
+          Claim secret: <code>{redact(secret)}</code>
+        </p>
 
-      <div className="actions">
-        <button onClick={() => setNotice(SUBMIT_NOTICE)} className="button">
-          Claim payment
-        </button>
-      </div>
-      {notice && (
-        <div className="note">
-          <p role="status">{notice}</p>
+        <div className="actions" style={{ marginTop: 'var(--s-4)' }}>
+          <button onClick={() => setNotice(SUBMIT_NOTICE)} className="btn">
+            Claim payment
+          </button>
         </div>
-      )}
+        {notice && (
+          <div className="caveat" style={{ marginTop: 'var(--s-4)' }}>
+            <p role="status">{notice}</p>
+          </div>
+        )}
 
-      <PendingClaims secret={secret} />
+        <div style={{ marginTop: 'var(--s-5)' }}>
+          <PendingClaims secret={secret} />
+        </div>
+      </div>
     </main>
   );
 }

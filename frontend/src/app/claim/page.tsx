@@ -41,43 +41,45 @@ export default function ClaimEntryPage() {
 
   return (
     <main className="page">
-      <h1>Claim a payment</h1>
-      <p className="lede">
-        Your claim secret is the one thing that authorises your payment. It
-        arrives in an encrypted Waku notification, or in a link from whoever
-        paid you.
-      </p>
-
-      <form onSubmit={submit}>
-        <label htmlFor="secret">Claim secret</label>
-        <input
-          id="secret"
-          type="text"
-          value={secret}
-          onChange={(event) => setSecret(event.target.value)}
-          placeholder="0x… or a decimal number"
-          autoComplete="off"
-          spellCheck={false}
-          aria-describedby="secret-help"
-          aria-invalid={error !== null}
-        />
-        <p id="secret-help" className="muted">
-          Anyone holding this value can claim the payment, so treat it the way
-          you would treat the money itself.
+      <div className="panel" style={{ padding: 'var(--s-5)', marginTop: 'var(--s-4)' }}>
+        <h1>Claim a payment</h1>
+        <p className="lead" style={{ margin: 'var(--s-3) 0' }}>
+          Your claim secret is the one thing that authorises your payment. It
+          arrives in an encrypted Waku notification, or in a link from whoever
+          paid you.
         </p>
-        {error && (
-          <p role="alert" className="muted">
-            {error}
-          </p>
-        )}
-        <div className="actions">
-          <button type="submit" className="button" disabled={trimmed === ""}>
-            Look up my payment
-          </button>
-        </div>
-      </form>
 
-      <div className="note">
+        <form onSubmit={submit}>
+          <label htmlFor="secret">Claim secret</label>
+          <input
+            id="secret"
+            type="text"
+            value={secret}
+            onChange={(event) => setSecret(event.target.value)}
+            placeholder="0x… or a decimal number"
+            autoComplete="off"
+            spellCheck={false}
+            aria-describedby="secret-help"
+            aria-invalid={error !== null}
+          />
+          <p id="secret-help" className="dim">
+            Anyone holding this value can claim the payment, so treat it the way
+            you would treat the money itself.
+          </p>
+          {error && (
+            <p role="alert" style={{ color: 'var(--hidden)' }}>
+              {error}
+            </p>
+          )}
+          <div className="actions">
+            <button type="submit" className="btn" disabled={trimmed === ""}>
+              Look up my payment
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="caveat" style={{ marginTop: 'var(--s-4)' }}>
         <p>
           Nothing you type here leaves your browser. The next page derives a
           Waku content topic and a decryption key from the secret locally, so
