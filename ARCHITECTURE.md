@@ -24,7 +24,7 @@ README.
 A payer funds through the STRK20 privacy pool. The pool's `InvokeExternal`
 is the only caller of `Payroll.privacy_invoke`. `RunInfo` stores aggregate
 accounting and an `owner_commitment` derived from the payer's `owner_secret`
-(see `docs/adr-run-ownership.md`). It stores no payer address: the pool is
+(see [`docs/adr-run-ownership.md`](docs/adr-run-ownership.md)). It stores no payer address: the pool is
 always the caller, and recording the real payer would publish the link the
 pool exists to hide.
 
@@ -33,12 +33,12 @@ Claim legs as they exist in this repo today:
 - Starknet: pool payout.
 - EVM: privacy-bridge `cashOut`, wired against the real API. Not yet
   exercised against live testnet infrastructure. Chain list in
-  `docs/evm-claim-coverage.md`.
+  [`docs/evm-claim-coverage.md`](docs/evm-claim-coverage.md).
 - Solana: NEAR Intents 1-Click connector in
   `integration/src/near-intents-connector.ts`. Route verified live via
   `npm run test:liquidity`. The end-to-end claim is not exercised (NEAR
   Intents has no testnet; mainnet needs funds and human sign-off). See
-  `docs/solana-claim-coverage.md`.
+  [`docs/solana-claim-coverage.md`](docs/solana-claim-coverage.md).
 
 ## Run state machine
 
@@ -50,6 +50,10 @@ from memory:
 - `expected_count` and `expected_total` are fixed at `OpenRun`. Either set
   to zero is rejected (`expected_count == 0` is how "run does not exist" is
   encoded).
+- `FundCommitment` reverts `QUORUM_NOT_MET` until both fixed approver slots
+  have called `ApproveRun` with their own secret (`approved_a && approved_b`).
+  See [`docs/adr-dual-approval-quorum.md`](docs/adr-dual-approval-quorum.md) for why two named slots rather than a
+  counter, and what the guarantee does and does not prove.
 - `closed` is set only when `funded_count == expected_count` **and**
   `total_committed == expected_total`. A short final `FundCommitment`
   reverts `UNDER_COMMITTED`.
@@ -65,7 +69,7 @@ from memory:
 
 ![Claim routing](diagrams/out/claim-routing.svg)
 
-EVM destinations are the five chains in `docs/evm-claim-coverage.md`'s
+EVM destinations are the five chains in [`docs/evm-claim-coverage.md`](docs/evm-claim-coverage.md)'s
 table, with those exact mainnet and testnet chain ids. Do not add a chain
 to this diagram without re-reading that file.
 

@@ -39,12 +39,12 @@ contract and the pool can still see real information:
 | That a given commitment was claimed, and the claim transaction itself | Which claim transaction belongs to which commitment/recipient, beyond what the commitment hash itself reveals |
 | The token used and whether the run is `closed` | Recipient identities across claims (no address reuse is required, and none is enforced) |
 
-The completeness guarantee (`is_complete`) is a public, verifiable property —
+The completeness guarantee (`is_complete`) is a public, verifiable property:
 that a run was funded exactly as promised and every promised recipient was
-paid — without revealing who those recipients are.
+paid, without revealing who those recipients are.
 
 Every row above is mapped to its real source (contract fields, tests) in
-[`docs/verification-guide.md`](docs/verification-guide.md) — check that
+[`docs/verification-guide.md`](docs/verification-guide.md); check that
 before taking this table's word for it.
 
 ## What actually works today
@@ -53,15 +53,15 @@ This repo is mid-build. Only claim the chains and legs that are real:
 
 | Component | Status |
 |---|---|
-| `contracts/payroll` — Cairo contract, `privacy_invoke`-driven run accounting, run-ownership authorization | Done — tested (`snforge test`, CI-enforced) |
+| `contracts/payroll`: Cairo contract, `privacy_invoke`-driven run accounting, run-ownership authorization | Done and tested (`snforge test`, CI-enforced) |
 | Starknet → Starknet fund + claim, via the pool | Done and tested locally. Not yet exercised against live Sepolia or mainnet infrastructure |
 | EVM claim leg (privacy-bridge) | Wired against the real API (`cashOut`, see `docs/evm-claim-coverage.md`). Not yet exercised against live testnet infrastructure |
-| Solana claim leg (NEAR Intents) | Connector implemented against the real 1-Click API (see `docs/solana-claim-coverage.md`). Route verified live — pinned asset IDs and a dry-run quote are re-checked by `npm run test:liquidity`. The end-to-end claim is **not** exercised: NEAR Intents has no testnet, so it needs mainnet funds and human sign-off |
-| Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Sent from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`), and independently by `integration/src/commitment-listener.ts` polling `CommitmentFunded` for any commitment registered in the outbox ahead of time — so a commitment funded through a different path than `sepolia-run.ts` still gets notified once the chain confirms it (see `docs/adr-commitment-funded-listener.md`). The secret still has to reach the outbox from whoever funds the commitment; this is not a purely chain-driven notification |
-| Frontend app shell (`frontend/`) | Done — placeholder `/admin` and `/claim/[secret]` routes, zero business logic |
-| Cavos payer/recipient UX | Partial — sign-in wired against the real `@cavos/kit` v0.1.11 API on `/admin` and `/claim/[secret]`, dual-approval gate implemented and unit-tested. Submission is **not** wired: `privacy_invoke` accepts only the pool as caller, and that path needs a mainnet proving service that is not published. Waku pending-claim discovery now read by the page: `/claim/[secret]` queries Waku Store for a notification already sent and subscribes via Filter for one sent while it is open, reusing `notify/`'s derivation rather than a copy. Proven by a live-fleet round trip; an empty result is rendered as normal, not an error, since Store retention is finite |
-| Mainnet eligibility transactions | Done — 3 recorded in `strk20.json` and verified on-chain (`npm run verify:eligibility`). See `docs/mainnet-eligibility.md` |
-| `Payroll` mainnet deployment | Done — declared and deployed to `SN_MAIN`, address recorded in `strk20.json`. See `docs/mainnet-eligibility.md`. Deployed only; no run has been submitted through it yet — see issue #34 |
+| Solana claim leg (NEAR Intents) | Connector implemented against the real 1-Click API (see `docs/solana-claim-coverage.md`). Route verified live: pinned asset IDs and a dry-run quote are re-checked by `npm run test:liquidity`. The end-to-end claim is **not** exercised: NEAR Intents has no testnet, so it needs mainnet funds and human sign-off. See issue #37 |
+| Waku recipient notification | Done and tested end-to-end against the live Waku test fleet (`notify/`). Sent from `openAndFundSingleCommitment` after a successful `FundCommitment` (see `integration/src/sepolia-run.ts`), and independently by `integration/src/commitment-listener.ts` polling `CommitmentFunded` for any commitment registered in the outbox ahead of time, so a commitment funded through a different path than `sepolia-run.ts` still gets notified once the chain confirms it (see `docs/adr-commitment-funded-listener.md`). The secret still has to reach the outbox from whoever funds the commitment; this is not a purely chain-driven notification |
+| Frontend app shell (`frontend/`) | Done: `/admin` and `/claim/[secret]` routes exist and render without credentials. Superseded by the row below for actual behavior: both routes now carry real logic (Cavos sign-in, the dual-approval gate, Waku pending-claim discovery), not the placeholder shell this row originally described |
+| Cavos payer/recipient UX | Partial: sign-in wired against the real `@cavos/kit` v0.1.11 API on `/admin` and `/claim/[secret]`, dual-approval gate implemented and unit-tested. Submission is **not** wired: `privacy_invoke` accepts only the pool as caller, and that path needs a mainnet proving service that is not published. Waku pending-claim discovery now read by the page: `/claim/[secret]` queries Waku Store for a notification already sent and subscribes via Filter for one sent while it is open, reusing `notify/`'s derivation rather than a copy. Proven by a live-fleet round trip; an empty result is rendered as normal, not an error, since Store retention is finite |
+| Mainnet eligibility transactions | Done: 3 recorded in `strk20.json` and verified on-chain (`npm run verify:eligibility`). See `docs/mainnet-eligibility.md` |
+| `Payroll` mainnet deployment | Deployed to `SN_MAIN`, address recorded in `strk20.json`, but that class predates the on-chain dual-approval quorum from #31; a fresh declare and deploy is scoped in issue #41 and not yet done. Deployed only either way; no run has been submitted through it yet, see issue #34. See `docs/mainnet-eligibility.md` and the "Known gaps" section of `docs/verification-guide.md` |
 
 Check the repo's GitHub issues for what's actively in progress; treat that
 tracker, not this README, as the up-to-date source of truth on scope.
@@ -76,14 +76,14 @@ the EVM and Solana legs "planned"). Do not edit the SVG; change the typed
 spec and run `npm run generate` in `diagrams/`. The run state machine and
 claim-routing tree live in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-- **`contracts/payroll`** — the only component that ever touches recipient
+- **`contracts/payroll`**: the only component that ever touches recipient
   funds. Called exclusively by the privacy pool's `InvokeExternal`; see
   `CLAUDE.md` §6 for the accounting invariants it enforces (fixed
   `expected_count`/`expected_total`, exact-final-commitment closing, run
   ownership proven by secret rather than address).
-- **`integration`** — TypeScript tests and helpers driving the pool +
+- **`integration`**: TypeScript tests and helpers driving the pool +
   Payroll contract via the privacy SDK.
-- **`notify`** — Waku ECIES key/topic derivation and encrypted claim
+- **`notify`**: Waku ECIES key/topic derivation and encrypted claim
   notifications, keyed off the same commitment secret as the on-chain claim,
   never a Starknet address (see the package's `topics.ts`). Called from
   `integration/src/sepolia-run.ts` after each successful `FundCommitment`,
@@ -91,23 +91,25 @@ claim-routing tree live in [`ARCHITECTURE.md`](ARCHITECTURE.md).
   through any other path (see `docs/adr-commitment-funded-listener.md`).
   `integration/` depends on it via `file:../notify` (see
   `docs/adr-notify-package-boundary.md`).
-- **`integration/src/near-intents-connector.ts`** — the Solana claim leg:
+- **`integration/src/near-intents-connector.ts`**: the Solana claim leg,
   quote → deposit-notify → poll, against NEAR Intents' 1-Click API. It sits
   downstream of a Starknet claim and never touches custody or the
   privacy-critical accounting above.
-- **`frontend`** — Next.js app with `/admin` and `/claim/[secret]`. Cavos
+- **`frontend`**: Next.js app with `/admin` and `/claim/[secret]`. Cavos
   provides seed-phrase-free sign-in on the Starknet side only; EVM and Solana
-  recipients never see it. The dual-approval gate lives in `src/lib/quorum.ts`
-  and is where the separation-of-duties guarantee is enforced today — in the
-  UI, not on-chain, for reasons that module documents.
+  recipients never see it. The separation-of-duties guarantee is enforced
+  on-chain in `Payroll` itself (`ApproveRun`, `QUORUM_NOT_MET`; see
+  `docs/adr-dual-approval-quorum.md`). `src/lib/quorum.ts` predates that and is
+  now a UX convenience layered on top of the contract invariant, not the only
+  thing enforcing it, as `frontend/README.md` explains.
 
 ## Dependency transparency
 
 | Dependency | Role | License |
 |---|---|---|
 | [STRK20 Privacy Pool][strk20-pool], Escrow pattern, Privacy Bridge | Core privacy primitive this repo builds on (StarkWare) | Apache-2.0 |
-| [Cavos](https://github.com/cavos-labs) | Starknet-side payer/recipient UX only — never custody, never a cross-chain leg | Verified directly: `cavos-account` is MIT (`LICENSE` in-repo) and `@cavos/kit` v0.1.11 declares MIT in its npm metadata — those two are what this repo depends on. Most other Cavos repositories carry **no declared license**; treat them as all-rights-reserved until Cavos states otherwise. |
-| [Waku](https://waku.org) | Recipient notification transport only — no custody, no privacy-critical logic depends on it | Apache-2.0 / MIT (dual, per Waku project) |
+| [Cavos](https://github.com/cavos-labs) | Starknet-side payer/recipient UX only, never custody, never a cross-chain leg | Verified directly: `cavos-account` is MIT (`LICENSE` in-repo) and `@cavos/kit` v0.1.11 declares MIT in its npm metadata; those two are what this repo depends on. Most other Cavos repositories carry **no declared license**; treat them as all-rights-reserved until Cavos states otherwise. |
+| [Waku](https://waku.org) | Recipient notification transport only, no custody, no privacy-critical logic depends on it | Apache-2.0 / MIT (dual, per Waku project) |
 
 ## Local setup
 
@@ -118,7 +120,7 @@ plugins.
 asdf install   # reads .tool-versions: scarb 2.17.0, starknet-foundry 0.63.0
 ```
 
-### Cairo — no credentials needed
+### Cairo: no credentials needed
 
 ```bash
 cd contracts/payroll
@@ -126,7 +128,7 @@ scarb build
 snforge test
 ```
 
-### TypeScript — tokenless path (no credentials needed)
+### TypeScript: tokenless path (no credentials needed)
 
 ```bash
 cd integration
@@ -134,16 +136,16 @@ npm install
 npm run test:offline
 ```
 
-### Notify — Waku recipient notifications
+### Notify: Waku recipient notifications
 
 ```bash
 cd notify
 npm install
 npm run test:offline   # deterministic derivation tests, no network
-npm test               # full suite — talks to the live Waku test fleet, no credentials needed
+npm test               # full suite, talks to the live Waku test fleet, no credentials needed
 ```
 
-No environment variables — see [`notify/.env.example`](notify/.env.example).
+No environment variables: see [`notify/.env.example`](notify/.env.example).
 
 ### Diagrams: regenerate the committed SVGs
 
@@ -161,7 +163,7 @@ npm run generate               # writes diagrams/out/<name>.{dot,svg}
 CI fails the PR if a typed spec changed without regenerating the committed
 `.dot` files. See [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-### Frontend — app shell
+### Frontend: app shell
 
 ```bash
 cd frontend
@@ -172,33 +174,33 @@ npm run dev   # serves /admin and /claim/[secret], no credentials needed
 Cavos sign-in is wired on `/admin` and `/claim/[secret]`, behind the
 dual-approval gate. Both pages render a labelled unconfigured state without
 `NEXT_PUBLIC_CAVOS_APP_ID` and `NEXT_PUBLIC_CAVOS_APP_SALT`, so `npm run dev`
-and CI work with zero credentials. Submitting a run is deliberately inert —
+and CI work with zero credentials. Submitting a run is deliberately inert;
 see `src/lib/payroll-call.ts` for why. See
 [`frontend/.env.example`](frontend/.env.example) for every variable; copy it
 to `.env.local` to configure Cavos.
 
-### TypeScript — full suite (needs a GitHub Packages token)
+### TypeScript: full suite (needs a GitHub Packages token)
 
 `@starkware-libs/starknet-privacy-sdk` ships on GitHub Packages and is
 declared as an `optionalDependency` specifically so `npm install` succeeds
-without a token — only the SDK-dependent tests are skipped/fail without one.
+without a token: only the SDK-dependent tests are skipped/fail without one.
 
 ```bash
 npm config set //npm.pkg.github.com/:_authToken <TOKEN>   # needs read:packages
 cd integration
-cp .env.example .env   # fill in — see integration/.env.example for what each var is and where it comes from
+cp .env.example .env   # fill in; see integration/.env.example for what each var is and where it comes from
 npm test
 ```
 
 CI (`.github/workflows/ci.yml`) runs only the tokenless path on every PR, by
-design — see `CLAUDE.md` §8.
+design; see `CLAUDE.md` §8.
 
-If you hit a build/toolchain error, check `CLAUDE.md` §3 first — its
+If you hit a build/toolchain error, check `CLAUDE.md` §3 first: its
 error-to-cause map covers every trap this repo's toolchain has actually
 produced, and the fix is almost never what the error text suggests.
 
 Every command above, plus each suite's current pass count, is pinned in
-[`docs/verification-guide.md`](docs/verification-guide.md) — if a command
+[`docs/verification-guide.md`](docs/verification-guide.md); if a command
 here and that guide disagree, trust what the command actually prints.
 
 ## Demo video
@@ -209,7 +211,7 @@ recorded in [`strk20.json`](strk20.json) `demo_video` and hosted as a
 It uses the generated architecture SVGs and a real `snforge test` capture.
 Mainnet tx hashes are omitted until issue #2 fills `strk20.json` `transactions`.
 Every claim it makes also has its own row in
-[`docs/verification-guide.md`](docs/verification-guide.md) — the video is a
+[`docs/verification-guide.md`](docs/verification-guide.md): the video is a
 fast path through that guide, not a substitute source of truth for it.
 
 ## Mainnet contracts and transactions
@@ -222,9 +224,12 @@ table, alongside the specific claim it substantiates.
 
 **The eligibility floor is met**: three mainnet transactions are recorded, each
 verified on-chain as successful and carrying an event from the pool. They
-establish eligibility only — they were made from a privacy-enabled wallet, not
-through StableRoll, and the `Payroll` contract is not yet deployed to mainnet.
-That state is machine-checked rather than tracked by hand:
+establish eligibility only: they were made from a privacy-enabled wallet, not
+through StableRoll's own code. `Payroll` itself is deployed to `SN_MAIN`, but
+that deployed class predates the on-chain dual-approval quorum (issue #41),
+so do not read the deployment as feature-complete; see the "Known gaps"
+section of `docs/verification-guide.md`. That state is machine-checked rather
+than tracked by hand:
 
 ```bash
 cd integration && npm run verify:eligibility
@@ -232,11 +237,11 @@ cd integration && npm run verify:eligibility
 
 It passes only when three distinct hashes are recorded *and* each one is
 confirmed on mainnet as a successful transaction that emitted an event from the
-pool. It is not part of CI — it needs a public RPC this repo does not control.
+pool. It is not part of CI: it needs a public RPC this repo does not control.
 
 ## License
 
-Apache-2.0 — see [`LICENSE`](LICENSE), matching the reference contracts this
+Apache-2.0; see [`LICENSE`](LICENSE), matching the reference contracts this
 project extends.
 
 ---

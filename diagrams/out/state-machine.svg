@@ -2,133 +2,182 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 
-<svg width="808pt" height="871pt"
- viewBox="0.00 0.00 808.00 871.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(50.4 820.79)">
+<svg width="761pt" height="1008pt"
+ viewBox="0.00 0.00 761.00 1008.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(0.896319 0.896319) rotate(0) translate(50.4 1074.2)">
 <title>state&#45;machine</title>
-<text xml:space="preserve" text-anchor="start" x="154.62" y="-755.04" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="13.00" fill="#1e293b">StableRoll &#45; Payroll Run State Machine</text>
-<text xml:space="preserve" text-anchor="start" x="8" y="-745.84" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">expected_count and expected_total are fixed at OpenRun · closed only when every promised recipient is funded at the promised total</text>
+<text xml:space="preserve" text-anchor="start" x="154.62" y="-1008.45" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="13.00" fill="#1e293b">StableRoll &#45; Payroll Run State Machine</text>
+<text xml:space="preserve" text-anchor="start" x="8" y="-999.25" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">expected_count and expected_total are fixed at OpenRun · closed only when every promised recipient is funded at the promised total</text>
 
 <g id="node1" class="node">
 <title>start</title>
-<ellipse fill="#f8fafc" stroke="#64748b" stroke-width="1.6" cx="415.34" cy="-729.59" rx="10.8" ry="10.8"/>
+<ellipse fill="#f8fafc" stroke="#64748b" stroke-width="1.6" cx="233.59" cy="-983" rx="10.8" ry="10.8"/>
 </g>
 
 <g id="node2" class="node">
 <title>open</title>
-<path fill="#f0f9ff" stroke="#0284c7" stroke-width="2" d="M540.31,-659.79C540.31,-659.79 290.38,-659.79 290.38,-659.79 284.38,-659.79 278.38,-653.79 278.38,-647.79 278.38,-647.79 278.38,-624.07 278.38,-624.07 278.38,-618.07 284.38,-612.07 290.38,-612.07 290.38,-612.07 540.31,-612.07 540.31,-612.07 546.31,-612.07 552.31,-618.07 552.31,-624.07 552.31,-624.07 552.31,-647.79 552.31,-647.79 552.31,-653.79 546.31,-659.79 540.31,-659.79"/>
-<text xml:space="preserve" text-anchor="start" x="390.59" y="-640.98" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">OpenRun</text>
-<text xml:space="preserve" text-anchor="start" x="330.59" y="-631.88" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Fixes expected_count and expected_total</text>
-<text xml:space="preserve" text-anchor="start" x="294.22" y="-622.88" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Rejects either = 0 · run_id = compute_run_id(owner_secret)</text>
+<path fill="#f0f9ff" stroke="#0284c7" stroke-width="2" d="M358.56,-913.2C358.56,-913.2 108.62,-913.2 108.62,-913.2 102.62,-913.2 96.63,-907.2 96.63,-901.2 96.63,-901.2 96.63,-877.48 96.63,-877.48 96.63,-871.48 102.63,-865.48 108.63,-865.48 108.63,-865.48 358.56,-865.48 358.56,-865.48 364.56,-865.48 370.56,-871.48 370.56,-877.48 370.56,-877.48 370.56,-901.2 370.56,-901.2 370.56,-907.2 364.56,-913.2 358.56,-913.2"/>
+<text xml:space="preserve" text-anchor="start" x="208.84" y="-894.39" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">OpenRun</text>
+<text xml:space="preserve" text-anchor="start" x="148.84" y="-885.29" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Fixes expected_count and expected_total</text>
+<text xml:space="preserve" text-anchor="start" x="112.47" y="-876.29" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Rejects either = 0 · run_id = compute_run_id(owner_secret)</text>
 </g>
 
 <g id="node3" class="node">
-<title>fund</title>
-<path fill="#f0fdf4" stroke="#16a34a" stroke-width="2" d="M537.68,-553.07C537.68,-553.07 293,-553.07 293,-553.07 287,-553.07 281,-547.07 281,-541.07 281,-541.07 281,-517.35 281,-517.35 281,-511.35 287,-505.35 293,-505.35 293,-505.35 537.68,-505.35 537.68,-505.35 543.68,-505.35 549.68,-511.35 549.68,-517.35 549.68,-517.35 549.68,-541.07 549.68,-541.07 549.68,-547.07 543.68,-553.07 537.68,-553.07"/>
-<text xml:space="preserve" text-anchor="start" x="368.09" y="-534.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">FundCommitment</text>
-<text xml:space="preserve" text-anchor="start" x="296.84" y="-525.16" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Must prove owner_secret (NOT_RUN_OWNER otherwise)</text>
-<text xml:space="preserve" text-anchor="start" x="308.09" y="-516.16" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Token must match the run · increments funded_count</text>
+<title>approve</title>
+<path fill="#f0f9ff" stroke="#0284c7" stroke-width="2" d="M351.81,-806.48C351.81,-806.48 115.37,-806.48 115.37,-806.48 109.38,-806.48 103.38,-800.48 103.38,-794.48 103.38,-794.48 103.38,-770.76 103.38,-770.76 103.38,-764.76 109.38,-758.76 115.38,-758.76 115.38,-758.76 351.81,-758.76 351.81,-758.76 357.81,-758.76 363.81,-764.76 363.81,-770.76 363.81,-770.76 363.81,-794.48 363.81,-794.48 363.81,-800.48 357.81,-806.48 351.81,-806.48"/>
+<text xml:space="preserve" text-anchor="start" x="188.97" y="-787.67" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">ApproveRun (x2)</text>
+<text xml:space="preserve" text-anchor="start" x="154.84" y="-778.57" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Each approver reveals a distinct secret</text>
+<text xml:space="preserve" text-anchor="start" x="119.22" y="-769.57" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Matches approver_a/b_commitment · sets approved_a/b</text>
 </g>
 
 <g id="edge2" class="edge">
-<title>open&#45;&gt;fund</title>
-<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M415.34,-611.17C415.34,-597.38 415.34,-579.77 415.34,-564.5"/>
-<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="418.32,-564.5 415.34,-556 412.37,-564.5 418.32,-564.5"/>
+<title>open&#45;&gt;approve</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M233.59,-864.58C233.59,-850.79 233.59,-833.18 233.59,-817.91"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="236.57,-817.91 233.59,-809.41 230.62,-817.91 236.57,-817.91"/>
 </g>
 
 <g id="edge3" class="edge">
-<title>fund&#45;&gt;fund</title>
-<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M550.57,-538.55C573.67,-537.27 589.68,-534.16 589.68,-529.21 589.68,-525.03 578.29,-522.16 560.85,-520.6"/>
-<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="561.38,-517.66 552.69,-520.02 560.95,-523.59 561.38,-517.66"/>
-<text xml:space="preserve" text-anchor="middle" x="628.68" y="-525.34" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">more slots remain</text>
+<title>approve&#45;&gt;approve</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M364.55,-792.02C387.68,-790.78 403.81,-787.65 403.81,-782.62 403.81,-778.38 392.33,-775.48 374.84,-773.94"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="375.35,-770.99 366.66,-773.37 374.94,-776.93 375.35,-770.99"/>
+<text xml:space="preserve" text-anchor="middle" x="439.81" y="-778.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">second approver</text>
 </g>
 
 <g id="node4" class="node">
-<title>last</title>
-<path fill="#fffbeb" stroke="#d97706" stroke-width="2" d="M228.69,-433.22C228.69,-433.22 59.06,-391.26 59.06,-391.26 53.23,-389.82 53.23,-386.94 59.06,-385.5 59.06,-385.5 228.69,-343.54 228.69,-343.54 234.52,-342.1 246.16,-342.1 251.99,-343.54 251.99,-343.54 421.62,-385.5 421.62,-385.5 427.45,-386.94 427.45,-389.82 421.62,-391.26 421.62,-391.26 251.99,-433.22 251.99,-433.22 246.16,-434.66 234.52,-434.66 228.69,-433.22"/>
-<text xml:space="preserve" text-anchor="start" x="214.47" y="-393.43" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Last slot?</text>
-<text xml:space="preserve" text-anchor="start" x="172.09" y="-384.33" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">funded_count == expected_count</text>
-<text xml:space="preserve" text-anchor="start" x="159.72" y="-375.33" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">AND total_committed == expected_total</text>
+<title>quorum</title>
+<path fill="#fffbeb" stroke="#d97706" stroke-width="2" d="M221.95,-696.85C221.95,-696.85 90.55,-663.95 90.55,-663.95 84.73,-662.5 84.73,-659.58 90.55,-658.13 90.55,-658.13 221.95,-625.23 221.95,-625.23 227.77,-623.78 239.41,-623.78 245.23,-625.23 245.23,-625.23 376.63,-658.13 376.63,-658.13 382.45,-659.58 382.45,-662.5 376.63,-663.95 376.63,-663.95 245.23,-696.85 245.23,-696.85 239.41,-698.3 227.77,-698.3 221.95,-696.85"/>
+<text xml:space="preserve" text-anchor="start" x="197.59" y="-661.59" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Quorum met?</text>
+<text xml:space="preserve" text-anchor="start" x="172.09" y="-652.49" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">approved_a AND approved_b</text>
 </g>
 
 <g id="edge4" class="edge">
-<title>fund&#45;&gt;last</title>
-<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M385.65,-504.66C360.7,-484.86 324.38,-456.05 294.3,-432.18"/>
-<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="296.16,-429.86 287.65,-426.91 292.46,-434.53 296.16,-429.86"/>
-<text xml:space="preserve" text-anchor="middle" x="385.04" y="-466.85" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">attempt final slot</text>
-</g>
-
-<g id="node7" class="node">
-<title>omit</title>
-<path fill="#fef2f2" stroke="#dc2626" stroke-width="2" d="M695.06,-412.24C695.06,-412.24 485.63,-412.24 485.63,-412.24 479.63,-412.24 473.63,-406.24 473.63,-400.24 473.63,-400.24 473.63,-376.52 473.63,-376.52 473.63,-370.52 479.63,-364.52 485.63,-364.52 485.63,-364.52 695.06,-364.52 695.06,-364.52 701.06,-364.52 707.06,-370.52 707.06,-376.52 707.06,-376.52 707.06,-400.24 707.06,-400.24 707.06,-406.24 701.06,-412.24 695.06,-412.24"/>
-<text xml:space="preserve" text-anchor="start" x="545.34" y="-393.43" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Omitted recipient</text>
-<text xml:space="preserve" text-anchor="start" x="498.09" y="-384.33" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">funded_count never reaches expected_count</text>
-<text xml:space="preserve" text-anchor="start" x="489.47" y="-375.33" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">closed stays false · is_complete can never be true</text>
-</g>
-
-<g id="edge7" class="edge">
-<title>fund&#45;&gt;omit</title>
-<path fill="none" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="5,2" d="M445.03,-504.66C474.57,-481.22 520.02,-445.17 552.22,-419.62"/>
-<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.4" points="554.04,-421.98 558.85,-414.36 550.34,-417.32 554.04,-421.98"/>
-<text xml:space="preserve" text-anchor="middle" x="560.61" y="-466.85" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#dc2626">never fund a promised recipient</text>
+<title>approve&#45;&gt;quorum</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M233.59,-757.99C233.59,-744.59 233.59,-727.31 233.59,-711.11"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="236.57,-711.3 233.59,-702.8 230.62,-711.3 236.57,-711.3"/>
 </g>
 
 <g id="node5" class="node">
-<title>closed</title>
-<path fill="#ecfdf5" stroke="#059669" stroke-width="2" d="M209.06,-266.91C209.06,-266.91 29.63,-266.91 29.63,-266.91 23.63,-266.91 17.63,-260.91 17.63,-254.91 17.63,-254.91 17.63,-240.19 17.63,-240.19 17.63,-234.19 23.63,-228.19 29.63,-228.19 29.63,-228.19 209.06,-228.19 209.06,-228.19 215.06,-228.19 221.06,-234.19 221.06,-240.19 221.06,-240.19 221.06,-254.91 221.06,-254.91 221.06,-260.91 215.06,-266.91 209.06,-266.91"/>
-<text xml:space="preserve" text-anchor="start" x="85.22" y="-248.1" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">closed = true</text>
-<text xml:space="preserve" text-anchor="start" x="33.47" y="-239" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Run is fully funded at the promised budget</text>
-</g>
-
-<g id="edge5" class="edge">
-<title>last&#45;&gt;closed</title>
-<path fill="none" stroke="#059669" stroke-width="2" d="M206.31,-348.34C186.34,-325.42 161.58,-297.01 143.59,-276.37"/>
-<polygon fill="#059669" stroke="#059669" stroke-width="2" points="145.9,-274.49 138.07,-270.04 141.41,-278.4 145.9,-274.49"/>
-<text xml:space="preserve" text-anchor="middle" x="199.6" y="-302.16" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#059669">totals match</text>
-</g>
-
-<g id="node6" class="node">
-<title>under</title>
-<path fill="#fef2f2" stroke="#dc2626" stroke-width="2" d="M449.18,-271.41C449.18,-271.41 273.5,-271.41 273.5,-271.41 267.5,-271.41 261.5,-265.41 261.5,-259.41 261.5,-259.41 261.5,-235.69 261.5,-235.69 261.5,-229.69 267.5,-223.69 273.5,-223.69 273.5,-223.69 449.18,-223.69 449.18,-223.69 455.18,-223.69 461.18,-229.69 461.18,-235.69 461.18,-235.69 461.18,-259.41 461.18,-259.41 461.18,-265.41 455.18,-271.41 449.18,-271.41"/>
-<text xml:space="preserve" text-anchor="start" x="304.72" y="-252.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">UNDER_COMMITTED</text>
-<text xml:space="preserve" text-anchor="start" x="277.34" y="-243.5" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Final FundCommitment shorts the budget</text>
-<text xml:space="preserve" text-anchor="start" x="287.09" y="-234.5" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Payer cannot hide an underpayment</text>
+<title>quorum_not_met</title>
+<path fill="#fef2f2" stroke="#dc2626" stroke-width="2" d="M309.18,-548.57C309.18,-548.57 12,-548.57 12,-548.57 6,-548.57 0,-542.57 0,-536.57 0,-536.57 0,-521.85 0,-521.85 0,-515.85 6,-509.85 12,-509.85 12,-509.85 309.18,-509.85 309.18,-509.85 315.18,-509.85 321.18,-515.85 321.18,-521.85 321.18,-521.85 321.18,-536.57 321.18,-536.57 321.18,-542.57 315.18,-548.57 309.18,-548.57"/>
+<text xml:space="preserve" text-anchor="start" x="106.22" y="-529.76" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">QUORUM_NOT_MET</text>
+<text xml:space="preserve" text-anchor="start" x="15.84" y="-520.66" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">FundCommitment reverts until both approvers have called ApproveRun</text>
 </g>
 
 <g id="edge6" class="edge">
-<title>last&#45;&gt;under</title>
-<path fill="none" stroke="#dc2626" stroke-width="1.4" d="M274.37,-348.34C293.17,-326.77 316.21,-300.33 333.86,-280.08"/>
-<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.4" points="336.08,-282.05 339.43,-273.69 331.6,-278.14 336.08,-282.05"/>
-<text xml:space="preserve" text-anchor="middle" x="343.74" y="-302.16" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#dc2626">short the last</text>
+<title>quorum&#45;&gt;quorum_not_met</title>
+<path fill="none" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="5,2" d="M214.6,-626.27C202.77,-605.22 187.71,-578.44 176.5,-558.51"/>
+<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.4" points="179.14,-557.13 172.38,-551.18 173.95,-560.05 179.14,-557.13"/>
+<text xml:space="preserve" text-anchor="middle" x="245.9" y="-583.82" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#dc2626">funding attempted early</text>
 </g>
 
-<g id="node8" class="node">
-<title>claim</title>
-<path fill="#eff6ff" stroke="#3b82f6" stroke-width="2" d="M226.68,-164.69C226.68,-164.69 12,-164.69 12,-164.69 6,-164.69 0,-158.69 0,-152.69 0,-152.69 0,-128.97 0,-128.97 0,-122.97 6,-116.97 12,-116.97 12,-116.97 226.68,-116.97 226.68,-116.97 232.68,-116.97 238.68,-122.97 238.68,-128.97 238.68,-128.97 238.68,-152.69 238.68,-152.69 238.68,-158.69 232.68,-164.69 226.68,-164.69"/>
-<text xml:space="preserve" text-anchor="start" x="104.34" y="-145.88" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Claim</text>
-<text xml:space="preserve" text-anchor="start" x="15.84" y="-136.78" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Secret preimage recomputes the commitment hash</text>
-<text xml:space="preserve" text-anchor="start" x="44.72" y="-127.78" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">paid_count and total_paid increment</text>
+<g id="node6" class="node">
+<title>fund</title>
+<path fill="#f0fdf4" stroke="#16a34a" stroke-width="2" d="M617.93,-553.07C617.93,-553.07 373.25,-553.07 373.25,-553.07 367.25,-553.07 361.25,-547.07 361.25,-541.07 361.25,-541.07 361.25,-517.35 361.25,-517.35 361.25,-511.35 367.25,-505.35 373.25,-505.35 373.25,-505.35 617.93,-505.35 617.93,-505.35 623.93,-505.35 629.93,-511.35 629.93,-517.35 629.93,-517.35 629.93,-541.07 629.93,-541.07 629.93,-547.07 623.93,-553.07 617.93,-553.07"/>
+<text xml:space="preserve" text-anchor="start" x="448.34" y="-534.26" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">FundCommitment</text>
+<text xml:space="preserve" text-anchor="start" x="377.09" y="-525.16" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Must prove owner_secret (NOT_RUN_OWNER otherwise)</text>
+<text xml:space="preserve" text-anchor="start" x="388.34" y="-516.16" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Token must match the run · increments funded_count</text>
+</g>
+
+<g id="edge5" class="edge">
+<title>quorum&#45;&gt;fund</title>
+<path fill="none" stroke="#059669" stroke-width="2" d="M285.35,-634.39C329.07,-612.73 391.65,-581.71 437.16,-559.16"/>
+<polygon fill="#059669" stroke="#059669" stroke-width="2" points="438.46,-561.84 444.76,-555.4 435.82,-556.51 438.46,-561.84"/>
+<text xml:space="preserve" text-anchor="middle" x="418.81" y="-583.82" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#059669">both approved</text>
+</g>
+
+<g id="edge7" class="edge">
+<title>fund&#45;&gt;fund</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M630.82,-539.45C653.92,-538.05 669.93,-534.64 669.93,-529.21 669.93,-524.63 658.54,-521.49 641.1,-519.78"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="641.64,-516.83 632.93,-519.14 641.18,-522.77 641.64,-516.83"/>
+<text xml:space="preserve" text-anchor="middle" x="708.93" y="-525.34" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">more slots remain</text>
+</g>
+
+<g id="node7" class="node">
+<title>last</title>
+<path fill="#fffbeb" stroke="#d97706" stroke-width="2" d="M250.94,-433.22C250.94,-433.22 81.31,-391.26 81.31,-391.26 75.48,-389.82 75.48,-386.94 81.31,-385.5 81.31,-385.5 250.94,-343.54 250.94,-343.54 256.77,-342.1 268.41,-342.1 274.24,-343.54 274.24,-343.54 443.87,-385.5 443.87,-385.5 449.7,-386.94 449.7,-389.82 443.87,-391.26 443.87,-391.26 274.24,-433.22 274.24,-433.22 268.41,-434.66 256.77,-434.66 250.94,-433.22"/>
+<text xml:space="preserve" text-anchor="start" x="236.72" y="-393.43" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Last slot?</text>
+<text xml:space="preserve" text-anchor="start" x="194.34" y="-384.33" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">funded_count == expected_count</text>
+<text xml:space="preserve" text-anchor="start" x="181.97" y="-375.33" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">AND total_committed == expected_total</text>
 </g>
 
 <g id="edge8" class="edge">
-<title>closed&#45;&gt;claim</title>
-<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M119.34,-227.34C119.34,-212.87 119.34,-192.65 119.34,-175.51"/>
-<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="122.32,-175.93 119.34,-167.43 116.37,-175.93 122.32,-175.93"/>
+<title>fund&#45;&gt;last</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M455.8,-504.5C420.68,-483.58 368.83,-452.68 327.68,-428.16"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="329.45,-425.75 320.62,-423.96 326.4,-430.87 329.45,-425.75"/>
+<text xml:space="preserve" text-anchor="middle" x="443.19" y="-466.85" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#475569">attempt final slot</text>
 </g>
 
-<g id="node9" class="node">
-<title>complete</title>
-<path fill="#ecfdf5" stroke="#059669" stroke-width="3" d="M211.68,-47.72C211.68,-47.72 27,-47.72 27,-47.72 21,-47.72 15,-41.72 15,-35.72 15,-35.72 15,-12 15,-12 15,-6 21,0 27,0 27,0 211.68,0 211.68,0 217.68,0 223.68,-6 223.68,-12 223.68,-12 223.68,-35.72 223.68,-35.72 223.68,-41.72 217.68,-47.72 211.68,-47.72"/>
-<text xml:space="preserve" text-anchor="start" x="87.84" y="-28.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">is_complete</text>
-<text xml:space="preserve" text-anchor="start" x="30.84" y="-19.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">closed AND paid_count == expected_count</text>
-<text xml:space="preserve" text-anchor="start" x="48.47" y="-10.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">AND total_paid == total_committed</text>
+<g id="node10" class="node">
+<title>omit</title>
+<path fill="#fef2f2" stroke="#dc2626" stroke-width="2" d="M717.31,-412.24C717.31,-412.24 507.88,-412.24 507.88,-412.24 501.88,-412.24 495.88,-406.24 495.88,-400.24 495.88,-400.24 495.88,-376.52 495.88,-376.52 495.88,-370.52 501.88,-364.52 507.88,-364.52 507.88,-364.52 717.31,-364.52 717.31,-364.52 723.31,-364.52 729.31,-370.52 729.31,-376.52 729.31,-376.52 729.31,-400.24 729.31,-400.24 729.31,-406.24 723.31,-412.24 717.31,-412.24"/>
+<text xml:space="preserve" text-anchor="start" x="567.59" y="-393.43" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Omitted recipient</text>
+<text xml:space="preserve" text-anchor="start" x="520.34" y="-384.33" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">funded_count never reaches expected_count</text>
+<text xml:space="preserve" text-anchor="start" x="511.72" y="-375.33" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">closed stays false · is_complete can never be true</text>
+</g>
+
+<g id="edge11" class="edge">
+<title>fund&#45;&gt;omit</title>
+<path fill="none" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="5,2" d="M515.44,-504.66C534.85,-481.62 564.54,-446.39 585.99,-420.94"/>
+<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.4" points="588.08,-423.08 591.28,-414.67 583.53,-419.25 588.08,-423.08"/>
+<text xml:space="preserve" text-anchor="middle" x="615.33" y="-466.85" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#dc2626">never fund a promised recipient</text>
+</g>
+
+<g id="node8" class="node">
+<title>closed</title>
+<path fill="#ecfdf5" stroke="#059669" stroke-width="2" d="M231.31,-266.91C231.31,-266.91 51.88,-266.91 51.88,-266.91 45.88,-266.91 39.88,-260.91 39.88,-254.91 39.88,-254.91 39.88,-240.19 39.88,-240.19 39.88,-234.19 45.88,-228.19 51.88,-228.19 51.88,-228.19 231.31,-228.19 231.31,-228.19 237.31,-228.19 243.31,-234.19 243.31,-240.19 243.31,-240.19 243.31,-254.91 243.31,-254.91 243.31,-260.91 237.31,-266.91 231.31,-266.91"/>
+<text xml:space="preserve" text-anchor="start" x="107.47" y="-248.1" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">closed = true</text>
+<text xml:space="preserve" text-anchor="start" x="55.72" y="-239" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Run is fully funded at the promised budget</text>
 </g>
 
 <g id="edge9" class="edge">
+<title>last&#45;&gt;closed</title>
+<path fill="none" stroke="#059669" stroke-width="2" d="M228.56,-348.34C208.59,-325.42 183.83,-297.01 165.84,-276.37"/>
+<polygon fill="#059669" stroke="#059669" stroke-width="2" points="168.15,-274.49 160.32,-270.04 163.66,-278.4 168.15,-274.49"/>
+<text xml:space="preserve" text-anchor="middle" x="221.85" y="-302.16" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#059669">totals match</text>
+</g>
+
+<g id="node9" class="node">
+<title>under</title>
+<path fill="#fef2f2" stroke="#dc2626" stroke-width="2" d="M471.43,-271.41C471.43,-271.41 295.75,-271.41 295.75,-271.41 289.75,-271.41 283.75,-265.41 283.75,-259.41 283.75,-259.41 283.75,-235.69 283.75,-235.69 283.75,-229.69 289.75,-223.69 295.75,-223.69 295.75,-223.69 471.43,-223.69 471.43,-223.69 477.43,-223.69 483.43,-229.69 483.43,-235.69 483.43,-235.69 483.43,-259.41 483.43,-259.41 483.43,-265.41 477.43,-271.41 471.43,-271.41"/>
+<text xml:space="preserve" text-anchor="start" x="326.97" y="-252.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">UNDER_COMMITTED</text>
+<text xml:space="preserve" text-anchor="start" x="299.59" y="-243.5" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Final FundCommitment shorts the budget</text>
+<text xml:space="preserve" text-anchor="start" x="309.34" y="-234.5" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Payer cannot hide an underpayment</text>
+</g>
+
+<g id="edge10" class="edge">
+<title>last&#45;&gt;under</title>
+<path fill="none" stroke="#dc2626" stroke-width="1.4" d="M296.62,-348.34C315.42,-326.77 338.46,-300.33 356.11,-280.08"/>
+<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.4" points="358.33,-282.05 361.68,-273.69 353.85,-278.14 358.33,-282.05"/>
+<text xml:space="preserve" text-anchor="middle" x="365.99" y="-302.16" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#dc2626">short the last</text>
+</g>
+
+<g id="node11" class="node">
+<title>claim</title>
+<path fill="#eff6ff" stroke="#3b82f6" stroke-width="2" d="M248.93,-164.69C248.93,-164.69 34.25,-164.69 34.25,-164.69 28.25,-164.69 22.25,-158.69 22.25,-152.69 22.25,-152.69 22.25,-128.97 22.25,-128.97 22.25,-122.97 28.25,-116.97 34.25,-116.97 34.25,-116.97 248.93,-116.97 248.93,-116.97 254.93,-116.97 260.93,-122.97 260.93,-128.97 260.93,-128.97 260.93,-152.69 260.93,-152.69 260.93,-158.69 254.93,-164.69 248.93,-164.69"/>
+<text xml:space="preserve" text-anchor="start" x="126.59" y="-145.88" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">Claim</text>
+<text xml:space="preserve" text-anchor="start" x="38.09" y="-136.78" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">Secret preimage recomputes the commitment hash</text>
+<text xml:space="preserve" text-anchor="start" x="66.97" y="-127.78" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">paid_count and total_paid increment</text>
+</g>
+
+<g id="edge12" class="edge">
+<title>closed&#45;&gt;claim</title>
+<path fill="none" stroke="#94a3b8" stroke-width="1.4" d="M141.59,-227.34C141.59,-212.87 141.59,-192.65 141.59,-175.51"/>
+<polygon fill="#94a3b8" stroke="#94a3b8" stroke-width="1.4" points="144.57,-175.93 141.59,-167.43 138.62,-175.93 144.57,-175.93"/>
+</g>
+
+<g id="node12" class="node">
+<title>complete</title>
+<path fill="#ecfdf5" stroke="#059669" stroke-width="3" d="M233.93,-47.72C233.93,-47.72 49.25,-47.72 49.25,-47.72 43.25,-47.72 37.25,-41.72 37.25,-35.72 37.25,-35.72 37.25,-12 37.25,-12 37.25,-6 43.25,0 49.25,0 49.25,0 233.93,0 233.93,0 239.93,0 245.93,-6 245.93,-12 245.93,-12 245.93,-35.72 245.93,-35.72 245.93,-41.72 239.93,-47.72 233.93,-47.72"/>
+<text xml:space="preserve" text-anchor="start" x="110.09" y="-28.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#1e293b">is_complete</text>
+<text xml:space="preserve" text-anchor="start" x="53.09" y="-19.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">closed AND paid_count == expected_count</text>
+<text xml:space="preserve" text-anchor="start" x="70.72" y="-10.81" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#475569">AND total_paid == total_committed</text>
+</g>
+
+<g id="edge13" class="edge">
 <title>claim&#45;&gt;complete</title>
-<path fill="none" stroke="#059669" stroke-width="2" d="M119.34,-116.01C119.34,-99.93 119.34,-78.43 119.34,-60.34"/>
-<polygon fill="#059669" stroke="#059669" stroke-width="2" points="122.32,-60.57 119.34,-52.07 116.37,-60.57 122.32,-60.57"/>
-<text xml:space="preserve" text-anchor="middle" x="194.34" y="-78.47" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#059669">every funded commitment claimed</text>
+<path fill="none" stroke="#059669" stroke-width="2" d="M141.59,-116.01C141.59,-99.93 141.59,-78.43 141.59,-60.34"/>
+<polygon fill="#059669" stroke="#059669" stroke-width="2" points="144.57,-60.57 141.59,-52.07 138.62,-60.57 144.57,-60.57"/>
+<text xml:space="preserve" text-anchor="middle" x="216.59" y="-78.47" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#059669">every funded commitment claimed</text>
 </g>
 </g>
 </svg>

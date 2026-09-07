@@ -6,18 +6,18 @@ that routes cross-chain swaps through a decentralized solver network on the
 NEAR Protocol.
 
 **This is NOT a bridge in the Privacy Bridge sense.** Where the EVM claim leg
-(see `docs/evm-claim-coverage.md`) uses StarkWare's Privacy Bridge + CCTP —
-a deterministic burn-and-mint protocol — the Solana leg uses an intent-based
+(see [`docs/evm-claim-coverage.md`](evm-claim-coverage.md)) uses StarkWare's Privacy Bridge + CCTP
+(a deterministic burn-and-mint protocol); the Solana leg uses an intent-based
 system where solvers compete to fill the swap. The privacy properties differ
 accordingly; see "What 'no on-chain link' actually means here" below.
 
-## API shape — pinned from real docs
+## API shape: pinned from real docs
 
 Source: [NEAR Intents documentation](https://docs.near-intents.org),
 [OpenAPI spec](https://1click.chaindefuser.com/docs/v0/openapi.yaml).
 Read **2026-08-23**.
 
-Do not modify the connector's API calls without re-reading the spec — the
+Do not modify the connector's API calls without re-reading the spec: the
 solver network's request/response schema can change without notice and
 StableRoll does not control it.
 
@@ -78,7 +78,7 @@ The STRK→Solana USDC route was confirmed live via a dry-run quote on
 `integration/src/near-intents-liquidity.test.ts` re-checks this at runtime
 against the live 1-Click API. Run it with `npm run test:liquidity`. It needs
 no credentials, only public internet, so it deliberately imports **only**
-`near-intents-connector.ts` — that module is SDK-free, whereas
+`near-intents-connector.ts`: that module is SDK-free, whereas
 `claim-solana.test.ts` imports `config.ts` and therefore cannot load at all
 without a GitHub Packages token.
 
@@ -90,9 +90,9 @@ running it against the real API rather than by reading the spec:
   is rejected with `400 recipient is not valid`; the incinerator address
   `1nc1nerator11111111111111111111111111111111` is accepted.
 - The API enforces a minimum notional per swap that tracks the STRK price.
-  At 10 STRK the call sat on that boundary and failed intermittently with
-  `amount is too low for bridge, try at least 10255031098236391937`, so the
-  dry run quotes 25 STRK for headroom. `dry: true` never moves funds.
+  At 10 STRK the call sat on that boundary and failed intermittently with an
+  "amount too low for bridge" error, so the dry run quotes 25 STRK for
+  headroom. `dry: true` never moves funds.
 
 USDC on Solana (`EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`) has deep
 liquidity on Jupiter and other Solana DEXes. The solver network sources
@@ -126,13 +126,13 @@ recipient, because the funds rested in the privacy pool first.
 address on Starknet (or via the NEAR Intents verifier contract), then delivers
 USDC to the specified Solana address. The Solana delivery transaction is
 public (like all Solana transactions). What is hidden: the NEAR Intents solver
-sees only the deposit address — it has **no visibility into the privacy pool's
+sees only the deposit address; it has **no visibility into the privacy pool's
 internal state**, the payer's identity, the run id, or the commitment hash.
 
 For StableRoll specifically:
 - `Payroll`'s `RunInfo` never records a payer address (see CLAUDE.md §6).
 - The claim's privacy-pool withdrawal is unlinkable to the original deposit.
-- The 1-Click API's deposit address is a fresh, single-use address — it does
+- The 1-Click API's deposit address is a fresh, single-use address; it does
   not encode any payer metadata.
 - The Solana recipient sees only their own address and the received USDC
   amount.

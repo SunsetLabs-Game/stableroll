@@ -11,7 +11,7 @@ import {
 } from "@starkware-libs/starknet-privacy-sdk";
 // `ContractDiscoveryProvider` is only exported from the SDK's `/testing`
 // subpath (verified against sdk/src/testing/index.ts and sdk/src/index.ts
-// in starkware-libs/starknet-privacy at fetch time) — it is NOT exported
+// in starkware-libs/starknet-privacy at fetch time): it is NOT exported
 // from the package root.
 import { ContractDiscoveryProvider, type PoolContractInterface } from "@starkware-libs/starknet-privacy-sdk/testing";
 import { requireEnv } from "./env.js";
@@ -25,16 +25,15 @@ export const SEPOLIA_CONFIG = {
   // ERC-20 token address the run is denominated in (Sepolia STRK). Passed
   // both to the SDK's `.with(token, ...)` deposit builder and as the
   // `token: ContractAddress` positional arg to `Payroll.privacy_invoke`.
-  // Must be a real felt address — a bare token symbol like "STRK" is not
+  // Must be a real felt address: a bare token symbol like "STRK" is not
   // a valid `StarknetAddress` (the SDK's `StarknetAddress` type is
   // `BigNumberish`; a non-numeric string type-checks but throws at
   // runtime when the SDK calls `toBigInt()` on it).
   strkAddress: process.env.SEPOLIA_STRK_ADDRESS ?? "",
   // Hosted Sepolia proving-service URL. No publicly documented hosted
-  // Sepolia prover URL was found (see task-4-report.md) — this must be
-  // supplied by whoever has access to StarkWare's hosted Sepolia
-  // infrastructure, or a self-hosted `crates/proof-interceptor`/proving
-  // service instance's URL.
+  // Sepolia prover URL exists; this must be supplied by whoever has access
+  // to StarkWare's hosted Sepolia infrastructure, or a self-hosted
+  // `crates/proof-interceptor`/proving service instance's URL.
   provingServiceUrl: process.env.SEPOLIA_PROVING_SERVICE_URL ?? "",
 };
 
@@ -57,7 +56,7 @@ export const SEPOLIA_RPC_PROVIDER = new RpcProvider({ nodeUrl: SEPOLIA_CONFIG.rp
  * fetching the pool's ABI on chain and wrapping it in a typed `Contract`.
  * `PoolContractInterface` (sdk/src/internal/pool-contract-interface.ts) is a
  * structural subset of the pool's view methods (channel_exists,
- * get_num_of_channels, get_note, nullifier_exists, ...) — a starknet.js
+ * get_num_of_channels, get_note, nullifier_exists, ...): a starknet.js
  * `Contract` connected to the real pool ABI satisfies it at runtime, but
  * `Contract`'s dynamic call surface isn't nominally typed as
  * `PoolContractInterface`, hence the cast.
@@ -68,7 +67,7 @@ async function buildPoolContract(
 ): Promise<PoolContractInterface> {
   const { abi } = await provider.getClassAt(poolAddress);
   // starknet.js 10.x's `Contract` constructor takes a single options object
-  // (verified against starknet@10.5.0's shipped .d.ts — the old 3-positional-arg
+  // (verified against starknet@10.5.0's shipped .d.ts: the old 3-positional-arg
   // constructor is gone in this major version).
   const contract = new Contract({ abi, address: poolAddress, providerOrAccount: provider });
   return contract as unknown as PoolContractInterface;
@@ -92,7 +91,7 @@ export async function getTransfers(
     account,
     viewingKeyProvider: {
       // `ViewingKeyProvider.getViewingKey()` is declared `Promise<ViewingKey>`
-      // in sdk/src/interfaces.ts — must be async, a bare `() => BigInt(...)`
+      // in sdk/src/interfaces.ts: must be async, a bare `() => BigInt(...)`
       // returning a plain `bigint` does not satisfy the interface.
       getViewingKey: async () => viewingKey,
     },

@@ -34,8 +34,9 @@ digraph "architecture" {
     fontsize="12";
     penwidth="2.5";
     margin="18";
-    openfund [label=<<B>OpenRun / FundCommitment</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">privacy_invoke, called only by the pool</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">owner_secret proves run ownership</FONT>>, fillcolor="#F0FDF4", color="#16A34A", penwidth="2.5"];
-    runinfo [label=<<B>RunInfo</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">expected_count · expected_total · closed</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">owner_commitment (secret-proven) · no payer address</FONT>>, fillcolor="#F0FDF4", color="#16A34A"];
+    approvers [label=<<B>Approvers (x2)</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">Each reveals a distinct secret via ApproveRun</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">FundCommitment reverts QUORUM_NOT_MET until both land</FONT>>, fillcolor="#F0F9FF", color="#0284C7", penwidth="2"];
+    openfund [label=<<B>OpenRun / FundCommitment</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">privacy_invoke, called only by the pool</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">owner_secret proves run ownership · quorum required to fund</FONT>>, fillcolor="#F0FDF4", color="#16A34A", penwidth="2.5"];
+    runinfo [label=<<B>RunInfo</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">expected_count · expected_total · closed</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">owner + approver commitments (secret-proven) · no addresses</FONT>>, fillcolor="#F0FDF4", color="#16A34A"];
     claimop [label=<<B>Claim</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">Recipient reveals the commitment secret</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">Hash is recomputed on-chain · never passed in</FONT>>, fillcolor="#F0FDF4", color="#16A34A", penwidth="2"];
   }
   subgraph cluster_claim {
@@ -54,6 +55,7 @@ digraph "architecture" {
   payer [label=<<B>Payer</B><BR/><FONT POINT-SIZE="9" COLOR="#475569">Holds owner_secret off-chain</FONT><BR/><FONT POINT-SIZE="9" COLOR="#475569">Opens the run · funds each commitment</FONT>>, fillcolor="#F0F9FF", color="#0284C7", penwidth="2"];
   payer -> pool [color="#94A3B8", label="fund (shielded)"];
   pool -> openfund [color="#059669", label="InvokeExternal", fontcolor="#059669", penwidth="2"];
+  approvers -> openfund [color="#059669", label="ApproveRun", fontcolor="#059669"];
   openfund -> runinfo [color="#94A3B8"];
   runinfo -> claimop [color="#94A3B8", label="recipient holds\ncommitment secret"];
   claimop -> starknet [color="#94A3B8"];
