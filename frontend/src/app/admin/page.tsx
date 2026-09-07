@@ -10,7 +10,6 @@ import {
   approvalMessage,
   distinctApprovers,
   fundingBlockedReason,
-  hasQuorum,
   type Approval,
 } from "@/lib/quorum";
 
